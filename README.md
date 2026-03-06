@@ -2,10 +2,13 @@
 
 基于 TuShare API 的每日股票数据获取与分析工具。
 
+**最后更新：** 2026-03-06
+
 ## 功能特性
 
 - 📊 获取股票基本信息
 - 📈 获取历史行情数据
+- 📉 **技术指标分析（新增）** - 支持 8 种技术指标
 - 🔍 简单的技术指标分析
 - 📝 每日自动更新数据
 - 🖥️ 命令行友好
@@ -44,6 +47,7 @@ daily-stock-insights/
 ├── main.py              # 主入口
 ├── stock_fetcher.py     # 数据获取模块
 ├── analyzer.py          # 分析模块
+├── technical_indicators.py  # 技术指标分析（8 个指标）
 ├── requirements.txt     # 依赖
 ├── README.md           # 说明文档
 └── .gitignore          # Git忽略文件
