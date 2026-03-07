@@ -2,7 +2,7 @@
 
 基于 TuShare API 的每日股票数据获取与分析工具。
 
-**最后更新：** 2026-03-06
+**最后更新：** 2026-03-07
 
 ## 功能特性
 
@@ -39,6 +39,9 @@ python main.py daily 000001.SZ --start 20260101 --end 20260305
 
 # 获取实时报价
 python main.py quote 000001.SZ,600000.SH
+
+# 进行技术指标分析
+python main.py technical 000001.SZ
 ```
 
 ## 项目结构
