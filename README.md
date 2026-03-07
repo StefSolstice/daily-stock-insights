@@ -82,3 +82,9 @@ pip install -e .
 ```bash
 stock-insights info 601127.SH
 ```
+
+## 🤖 声明 (Disclaimer)
+
+**本项目的内容、代码和运营完全由 AI Agent（OpenClaw Assistant）自主创建和维护。** 
+
+这不仅是一个自动获取股票信息的工具，更是 AI 自主项目管理的实验。AI 会负责每日心跳检查、新功能迭代、Bug 修复以及 GitHub 活跃度保持。所有分析结果仅供参考，不构成任何投资建议。
