@@ -9,6 +9,7 @@ import sys
 import argparse
 from stock_fetcher import StockFetcher
 from analyzer import StockAnalyzer, calculate_support_resistance, detect_patterns
+from alert_monitor import PriceAlert
 
 
 def cmd_stock_info(args):
@@ -18,19 +19,19 @@ def cmd_stock_info(args):
     stocks = fetcher.get_stock_basic(args.symbol)
     
     if not stocks:
-        print(f"未找到股票: {args.symbol}")
+        print(f"未找到股票：{args.symbol}")
         return
     
     for stock in stocks:
         print(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-        print(f"股票代码: {stock.get('ts_code')}")
-        print(f"股票简称: {stock.get('symbol')}")
-        print(f"股票全称: {stock.get('name')}")
-        print(f"所在地区: {stock.get('area')}")
-        print(f"所属行业: {stock.get('industry')}")
-        print(f"上市日期: {stock.get('list_date')}")
-        print(f"交易所:   {stock.get('exchange')}")
-        print(f"市场:     {stock.get('market')}")
+        print(f"股票代码：{stock.get('ts_code')}")
+        print(f"股票简称：{stock.get('symbol')}")
+        print(f"股票全称：{stock.get('name')}")
+        print(f"所在地区：{stock.get('area')}")
+        print(f"所属行业：{stock.get('industry')}")
+        print(f"上市日期：{stock.get('list_date')}")
+        print(f"交易所：  {stock.get('exchange')}")
+        print(f"市场：    {stock.get('market')}")
         print(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 
@@ -45,7 +46,7 @@ def cmd_daily(args):
     )
     
     if not data:
-        print(f"未获取到数据: {args.symbol}")
+        print(f"未获取到数据：{args.symbol}")
         return
     
     # 显示数据
@@ -77,13 +78,13 @@ def cmd_daily(args):
         
         # 支撑位和阻力位
         sr = calculate_support_resistance(data)
-        print(f"支撑位: {sr['support']}")
-        print(f"阻力位: {sr['resistance']}")
+        print(f"支撑位：{sr['support']}")
+        print(f"阻力位：{sr['resistance']}")
         
         # 技术形态
         patterns = detect_patterns(data)
         if patterns:
-            print(f"\n🔍 检测到形态: {', '.join(patterns)}")
+            print(f"\n🔍 检测到形态：{', '.join(patterns)}")
 
 
 def cmd_quote(args):
@@ -125,14 +126,42 @@ def cmd_watchlist(args):
         if stocks:
             stock = stocks[0]
             print(f"\n📌 {stock.get('name')} ({symbol})")
-            print(f"   行业: {stock.get('industry')}")
-            print(f"   地区: {stock.get('area')}")
+            print(f"   行业：{stock.get('industry')}")
+            print(f"   地区：{stock.get('area')}")
         
         # 获取最新行情
         data = fetcher.get_daily(symbol.strip(), start_date=args.start, end_date=args.end)
         if data:
             latest = data[0]
-            print(f"   收盘: {latest.get('close')} ({latest.get('pct_change'):.2f}%)")
+            print(f"   收盘：{latest.get('close')} ({latest.get('pct_change'):.2f}%)")
+
+
+def cmd_alert(args):
+    """价格提醒管理"""
+    alert = PriceAlert()
+    
+    if args.action == "add":
+        alert.add_alert(args.symbol, args.type, args.price, args.name)
+    elif args.action == "list":
+        alert.list_alerts(args.symbol if hasattr(args, 'symbol') else None)
+    elif args.action == "remove":
+        idx = args.index if hasattr(args, 'index') else None
+        alert.remove_alert(args.symbol, idx)
+    elif args.action == "check":
+        # 检查当前价格是否触发提醒
+        fetcher = StockFetcher(args.token)
+        data = fetcher.get_realtime_quote([args.symbol])
+        if data:
+            current = data[0]
+            triggered = alert.check_alerts({
+                args.symbol: {
+                    'price': current.get('close', 0),
+                    'name': current.get('name', args.symbol)
+                }
+            })
+            alert.print_triggered_alerts(triggered)
+        else:
+            print(f"⚠️  无法获取 {args.symbol} 的当前价格")
 
 
 def main():
@@ -147,6 +176,8 @@ def main():
   %(prog)s daily 000001.SZ --analyze         获取并分析行情
   %(prog)s quote 000001.SZ,600000.SH         获取实时报价
   %(prog)s watch 000001.SZ,600000.SH          监控自选股
+  %(prog)s alert add TSLA below 375 --name 特斯拉  添加价格提醒
+  %(prog)s alert list                      查看所有提醒
         """
     )
     
@@ -163,7 +194,7 @@ def main():
     daily_parser.add_argument("symbol", help="股票代码")
     daily_parser.add_argument("--start", "-s", help="开始日期 YYYYMMDD")
     daily_parser.add_argument("--end", "-e", help="结束日期 YYYYMMDD")
-    daily_parser.add_argument("--limit", "-l", type=int, default=30, help="显示条数 默认30")
+    daily_parser.add_argument("--limit", "-l", type=int, default=30, help="显示条数 默认 30")
     daily_parser.add_argument("--analyze", "-a", action="store_true", help="分析数据")
     
     # quote 命令
@@ -175,6 +206,30 @@ def main():
     watch_parser.add_argument("symbols", help="股票代码，用逗号分隔")
     watch_parser.add_argument("--start", "-s", help="开始日期 YYYYMMDD")
     watch_parser.add_argument("--end", "-e", help="结束日期 YYYYMMDD")
+    
+    # alert 命令
+    alert_parser = subparsers.add_parser("alert", help="价格提醒管理")
+    alert_subparsers = alert_parser.add_subparsers(dest="action", help="提醒操作")
+    
+    # alert add
+    alert_add = alert_subparsers.add_parser("add", help="添加价格提醒")
+    alert_add.add_argument("symbol", help="股票代码")
+    alert_add.add_argument("type", choices=['above', 'below', 'cross'], help="提醒类型")
+    alert_add.add_argument("price", type=float, help="目标价格")
+    alert_add.add_argument("--name", "-n", help="股票名称")
+    
+    # alert list
+    alert_list = alert_subparsers.add_parser("list", help="列出提醒")
+    alert_list.add_argument("symbol", nargs="?", help="股票代码（可选）")
+    
+    # alert remove
+    alert_remove = alert_subparsers.add_parser("remove", help="删除提醒")
+    alert_remove.add_argument("symbol", help="股票代码")
+    alert_remove.add_argument("--index", "-i", type=int, help="提醒编号")
+    
+    # alert check
+    alert_check = alert_subparsers.add_parser("check", help="检查提醒")
+    alert_check.add_argument("symbol", help="股票代码")
     
     args = parser.parse_args()
     
@@ -196,6 +251,8 @@ def main():
         cmd_quote(args)
     elif args.command == "watch":
         cmd_watchlist(args)
+    elif args.command == "alert":
+        cmd_alert(args)
 
 
 if __name__ == "__main__":
