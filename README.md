@@ -73,3 +73,12 @@ daily-stock-insights/
 ## License
 
 MIT
+## 安装 (Installation)
+你可以将本项目安装到本地环境：
+```bash
+pip install -e .
+```
+安装后可直接在命令行使用 `stock-insights` 命令：
+```bash
+stock-insights info 601127.SH
+```
