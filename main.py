@@ -9,6 +9,7 @@ import sys
 import argparse
 from stock_fetcher import StockFetcher
 from analyzer import StockAnalyzer, calculate_support_resistance, detect_patterns
+from technical_indicators import get_technical_indicators, generate_technical_report
 from alert_monitor import PriceAlert
 
 
@@ -30,8 +31,8 @@ def cmd_stock_info(args):
         print(f"所在地区：{stock.get('area')}")
         print(f"所属行业：{stock.get('industry')}")
         print(f"上市日期：{stock.get('list_date')}")
-        print(f"交易所：  {stock.get('exchange')}")
-        print(f"市场：    {stock.get('market')}")
+        print(f"交易所：   {stock.get('exchange')}")
+        print(f"市场：     {stock.get('market')}")
         print(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 
@@ -136,6 +137,30 @@ def cmd_watchlist(args):
             print(f"   收盘：{latest.get('close')} ({latest.get('pct_change'):.2f}%)")
 
 
+def cmd_technical(args):
+    """技术指标分析"""
+    fetcher = StockFetcher(args.token)
+    
+    # 获取历史数据
+    data = fetcher.get_daily(
+        args.symbol,
+        start_date=args.start,
+        end_date=args.end
+    )
+    
+    if not data:
+        print(f"未获取到数据：{args.symbol}")
+        return
+    
+    # 确保有足够的数据进行分析
+    if len(data) < 30:
+        print(f"⚠️  数据不足（当前{len(data)}条），建议获取至少 30 天数据")
+        print(f"   使用 --start 参数获取更多数据")
+    
+    # 生成技术分析报告
+    print(generate_technical_report(data, args.symbol))
+
+
 def cmd_alert(args):
     """价格提醒管理"""
     alert = PriceAlert()
@@ -176,8 +201,7 @@ def main():
   %(prog)s daily 000001.SZ --analyze         获取并分析行情
   %(prog)s quote 000001.SZ,600000.SH         获取实时报价
   %(prog)s watch 000001.SZ,600000.SH          监控自选股
-  %(prog)s alert add TSLA below 375 --name 特斯拉  添加价格提醒
-  %(prog)s alert list                      查看所有提醒
+  %(prog)s technical 000001.SZ --days 60     技术指标分析
         """
     )
     
@@ -194,7 +218,7 @@ def main():
     daily_parser.add_argument("symbol", help="股票代码")
     daily_parser.add_argument("--start", "-s", help="开始日期 YYYYMMDD")
     daily_parser.add_argument("--end", "-e", help="结束日期 YYYYMMDD")
-    daily_parser.add_argument("--limit", "-l", type=int, default=30, help="显示条数 默认 30")
+    daily_parser.add_argument("--limit", "-l", type=int, default=30, help="显示条数 默认30")
     daily_parser.add_argument("--analyze", "-a", action="store_true", help="分析数据")
     
     # quote 命令
@@ -206,6 +230,12 @@ def main():
     watch_parser.add_argument("symbols", help="股票代码，用逗号分隔")
     watch_parser.add_argument("--start", "-s", help="开始日期 YYYYMMDD")
     watch_parser.add_argument("--end", "-e", help="结束日期 YYYYMMDD")
+    
+    # technical 命令
+    technical_parser = subparsers.add_parser("technical", help="技术指标分析")
+    technical_parser.add_argument("symbol", help="股票代码")
+    technical_parser.add_argument("--start", "-s", help="开始日期 YYYYMMDD")
+    technical_parser.add_argument("--end", "-e", help="结束日期 YYYYMMDD")
     
     # alert 命令
     alert_parser = subparsers.add_parser("alert", help="价格提醒管理")
@@ -251,6 +281,8 @@ def main():
         cmd_quote(args)
     elif args.command == "watch":
         cmd_watchlist(args)
+    elif args.command == "technical":
+        cmd_technical(args)
     elif args.command == "alert":
         cmd_alert(args)
 

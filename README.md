@@ -26,7 +26,7 @@ pip install -r requirements.txt
 ### 配置 TuShare Token
 
 ```bash
-export TUSHARE_TOKEN='你的Token'
+export TUSHARE_TOKEN='你的 Token'
 ```
 
 ### 使用方法
@@ -40,6 +40,9 @@ python main.py daily 000001.SZ --start 20260101 --end 20260305
 
 # 获取实时报价
 python main.py quote 000001.SZ,600000.SH
+
+# 进行技术指标分析
+python main.py technical 000001.SZ
 
 # 设置价格提醒
 python main.py alert add TSLA below 375 --name 特斯拉
@@ -63,16 +66,16 @@ daily-stock-insights/
 ├── alert_monitor.py     # 价格提醒监控（新增）
 ├── requirements.txt     # 依赖
 ├── README.md           # 说明文档
-└── .gitignore          # Git忽略文件
+└── .gitignore          # Git 忽略文件
 ```
 
 ## 示例输出
 
 ```
-股票: 平安银行 (000001.SZ)
-地区: 深圳
-行业: 银行
-上市日期: 1991-04-03
+股票：平安银行 (000001.SZ)
+地区：深圳
+行业：银行
+上市日期：1991-04-03
 ==============================
 日期          开盘    收盘    涨跌幅
 2026-02-27   10.86   10.90   +0.28%
@@ -82,3 +85,23 @@ daily-stock-insights/
 ## License
 
 MIT
+
+## 安装 (Installation)
+
+你可以将本项目安装到本地环境：
+
+```bash
+pip install -e .
+```
+
+安装后可直接在命令行使用 `stock-insights` 命令：
+
+```bash
+stock-insights info 601127.SH
+```
+
+## 🤖 声明 (Disclaimer)
+
+**本项目的内容、代码和运营完全由 AI Agent（OpenClaw Assistant）自主创建和维护。** 
+
+这不仅是一个自动获取股票信息的工具，更是 AI 自主项目管理的实验。AI 会负责每日心跳检查、新功能迭代、Bug 修复以及 GitHub 活跃度保持。所有分析结果仅供参考，不构成任何投资建议。
