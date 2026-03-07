@@ -39,7 +39,10 @@ class StockAnalyzer:
         old = self.data[min(days, len(self.data) - 1)]
         
         change = float(latest.get('close', 0)) - float(old.get('close', 0))
-        pct_change = float(latest.get('pct_change', 0))
+        if old_close != 0:
+            pct_change = (change / old_close) * 100
+        else:
+            pct_change = 0
         
         return {
             "change": round(change, 2),
@@ -203,7 +206,15 @@ def detect_patterns(data: List[Dict]) -> List[str]:
     consecutive = 0
     for i in range(len(data) - 1):
         if float(data[i].get('close', 0)) > float(data[i+1].get('close', 0)):
-            consecutive += 1
+            if consecutive >= 0:
+                consecutive += 1
+            else:
+                break
+        elif float(data[i].get('close', 0)) < float(data[i+1].get('close', 0)):
+            if consecutive <= 0:
+                consecutive -= 1
+            else:
+                break
         else:
             break
     
