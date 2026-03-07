@@ -9,6 +9,7 @@ import sys
 import argparse
 from stock_fetcher import StockFetcher
 from analyzer import StockAnalyzer, calculate_support_resistance, detect_patterns
+from technical_indicators import get_technical_indicators, generate_technical_report
 
 
 def cmd_stock_info(args):
@@ -18,19 +19,19 @@ def cmd_stock_info(args):
     stocks = fetcher.get_stock_basic(args.symbol)
     
     if not stocks:
-        print(f"未找到股票: {args.symbol}")
+        print(f"未找到股票：{args.symbol}")
         return
     
     for stock in stocks:
         print(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-        print(f"股票代码: {stock.get('ts_code')}")
-        print(f"股票简称: {stock.get('symbol')}")
-        print(f"股票全称: {stock.get('name')}")
-        print(f"所在地区: {stock.get('area')}")
-        print(f"所属行业: {stock.get('industry')}")
-        print(f"上市日期: {stock.get('list_date')}")
-        print(f"交易所:   {stock.get('exchange')}")
-        print(f"市场:     {stock.get('market')}")
+        print(f"股票代码：{stock.get('ts_code')}")
+        print(f"股票简称：{stock.get('symbol')}")
+        print(f"股票全称：{stock.get('name')}")
+        print(f"所在地区：{stock.get('area')}")
+        print(f"所属行业：{stock.get('industry')}")
+        print(f"上市日期：{stock.get('list_date')}")
+        print(f"交易所：   {stock.get('exchange')}")
+        print(f"市场：     {stock.get('market')}")
         print(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 
@@ -45,7 +46,7 @@ def cmd_daily(args):
     )
     
     if not data:
-        print(f"未获取到数据: {args.symbol}")
+        print(f"未获取到数据：{args.symbol}")
         return
     
     # 显示数据
@@ -77,13 +78,13 @@ def cmd_daily(args):
         
         # 支撑位和阻力位
         sr = calculate_support_resistance(data)
-        print(f"支撑位: {sr['support']}")
-        print(f"阻力位: {sr['resistance']}")
+        print(f"支撑位：{sr['support']}")
+        print(f"阻力位：{sr['resistance']}")
         
         # 技术形态
         patterns = detect_patterns(data)
         if patterns:
-            print(f"\n🔍 检测到形态: {', '.join(patterns)}")
+            print(f"\n🔍 检测到形态：{', '.join(patterns)}")
 
 
 def cmd_quote(args):
@@ -125,14 +126,38 @@ def cmd_watchlist(args):
         if stocks:
             stock = stocks[0]
             print(f"\n📌 {stock.get('name')} ({symbol})")
-            print(f"   行业: {stock.get('industry')}")
-            print(f"   地区: {stock.get('area')}")
+            print(f"   行业：{stock.get('industry')}")
+            print(f"   地区：{stock.get('area')}")
         
         # 获取最新行情
         data = fetcher.get_daily(symbol.strip(), start_date=args.start, end_date=args.end)
         if data:
             latest = data[0]
-            print(f"   收盘: {latest.get('close')} ({latest.get('pct_change'):.2f}%)")
+            print(f"   收盘：{latest.get('close')} ({latest.get('pct_change'):.2f}%)")
+
+
+def cmd_technical(args):
+    """技术指标分析"""
+    fetcher = StockFetcher(args.token)
+    
+    # 获取历史数据
+    data = fetcher.get_daily(
+        args.symbol,
+        start_date=args.start,
+        end_date=args.end
+    )
+    
+    if not data:
+        print(f"未获取到数据：{args.symbol}")
+        return
+    
+    # 确保有足够的数据进行分析
+    if len(data) < 30:
+        print(f"⚠️  数据不足（当前{len(data)}条），建议获取至少 30 天数据")
+        print(f"   使用 --start 参数获取更多数据")
+    
+    # 生成技术分析报告
+    print(generate_technical_report(data, args.symbol))
 
 
 def main():
@@ -147,6 +172,7 @@ def main():
   %(prog)s daily 000001.SZ --analyze         获取并分析行情
   %(prog)s quote 000001.SZ,600000.SH         获取实时报价
   %(prog)s watch 000001.SZ,600000.SH          监控自选股
+  %(prog)s technical 000001.SZ --days 60     技术指标分析
         """
     )
     
@@ -176,6 +202,12 @@ def main():
     watch_parser.add_argument("--start", "-s", help="开始日期 YYYYMMDD")
     watch_parser.add_argument("--end", "-e", help="结束日期 YYYYMMDD")
     
+    # technical 命令
+    technical_parser = subparsers.add_parser("technical", help="技术指标分析")
+    technical_parser.add_argument("symbol", help="股票代码")
+    technical_parser.add_argument("--start", "-s", help="开始日期 YYYYMMDD")
+    technical_parser.add_argument("--end", "-e", help="结束日期 YYYYMMDD")
+    
     args = parser.parse_args()
     
     if not args.command:
@@ -196,6 +228,8 @@ def main():
         cmd_quote(args)
     elif args.command == "watch":
         cmd_watchlist(args)
+    elif args.command == "technical":
+        cmd_technical(args)
 
 
 if __name__ == "__main__":
