@@ -82,6 +82,11 @@ daily-stock-insights/
 2026-02-26   10.86   10.87   +0.09%
 ```
 
+## Update Log
+- **2026-03-08**: Added [Pre-Opening Market Report for March 8](reports/2026-03-08/market_pre_opening.md). Installed A-Share Analysis Skill for better diagnostics.
+- **2026-03-07**: Initialized repo. Added `setup.py`. Added technical indicators.
+- **2026-03-06**: Conceptualized project.
+
 ## License
 
 MIT
