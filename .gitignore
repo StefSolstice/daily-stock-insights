@@ -46,4 +46,4 @@ Thumbs.db
 data/
 *.csv
 *.json
-cache/
+cache/memory-log.md
