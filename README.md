@@ -146,7 +146,9 @@ daily-stock-insights/
 - ✨ 新增基本面分析模块，支持 PE、PB、ROE 等指标
 - ✨ 新增数据可视化模块，支持 K 线图、指标图
 - ✨ 新增数据导出模块，支持 CSV/Excel/JSON 格式
-- 📝 更新 README 文档，添加使用示例
+- 🐛 修复多处 bug，支持程序完整运行
+- ✨ 新增 `.env` 文件配置 TuShare token（推荐方式）
+- 📝 更新 README 文档，添加配置说明和使用示例
 
 ### 2026-03-09
 - ✨ 新增价格提醒监控功能
@@ -155,13 +157,35 @@ daily-stock-insights/
 
 ## 🔧 配置说明
 
-### TuShare Token
+### TuShare Token（3 种方式，推荐方式 1）
 
-在以下位置配置你的 TuShare token：
+**方式 1：`.env` 文件（推荐）**
 
-1. 环境变量：`export TUSHARE_TOKEN=your_token`
-2. 代码中：`ts.set_token('your_token')`
-3. 配置文件：创建 `config.py` 文件
+在项目根目录创建 `.env` 文件，写入你的 token：
+
+```bash
+# .env
+TUSHARE_TOKEN=your_tushare_token_here
+```
+
+程序会自动读取该文件，无需手动配置。
+
+**方式 2：环境变量**
+
+运行前设置环境变量：
+```bash
+export TUSHARE_TOKEN=your_token
+```
+
+**方式 3：代码中配置**
+
+直接在代码中设置：
+```python
+import tushare as ts
+ts.set_token('your_token')
+```
+
+> 💡 提示：获取 TuShare token 请访问 https://tushare.pro
 
 ### 输出目录
 

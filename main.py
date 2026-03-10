@@ -27,6 +27,20 @@ def init_tushare() -> Optional[ts.pro_api]:
     # 尝试从环境变量获取 token
     token = os.getenv('TUSHARE_TOKEN')
     
+    # 如果环境变量未设置，尝试从 .env 文件读取
+    if not token:
+        env_file = os.path.join(os.path.dirname(__file__), '.env')
+        if os.path.exists(env_file):
+            with open(env_file, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        key, value = line.split('=', 1)
+                        if key.strip() == 'TUSHARE_TOKEN':
+                            token = value.strip()
+                            os.environ['TUSHARE_TOKEN'] = token
+                            break
+    
     if not token:
         print("⚠️  未找到 TUSHARE_TOKEN 环境变量")
         print("请在 https://tushare.pro 注册并获取 token")
