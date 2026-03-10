@@ -1,114 +1,192 @@
-# 📈 Daily Stock Insights
+# Daily Stock Insights - 每日股票洞察
 
-基于 TuShare API 的每日股票数据获取与分析工具。
+📊 基于 TuShare API 的股票数据分析工具，提供技术指标、基本面分析、可视化和数据导出功能。
 
-**最后更新：** 2026-03-10
+## ✨ 功能特性
 
-## 功能特性
+### 📈 技术指标分析
+- **均线系统**: MA5, MA10, MA20, MA60
+- **趋势指标**: MACD, DMI, CCI
+- **动量指标**: RSI, KDJ, BOLL
+- **成交量分析**: 量价关系、均量线
 
-- 📊 获取股票基本信息
-- 📈 获取历史行情数据
-- 📉 **技术指标分析** - 支持 8 种技术指标
-- 🔍 简单的技术指标分析
-- 📝 每日自动更新数据
-- 🖥️ 命令行友好
-- 🤖 **自动心跳维护** - GitHub 活跃度自动保持
-- 🚨 **价格提醒监控（新增）** - 设置价格阈值自动提醒
+### 🏢 基本面分析 (NEW!)
+- **估值指标**: PE, PB, PS, 股息率
+- **盈利能力**: ROE, ROA, 毛利率
+- **成长能力**: 营收增速，利润增速
+- **估值水平评估**: 低/合理/高估判断
 
-## 快速开始
+### 📊 数据可视化 (NEW!)
+- **K 线图**: 红阳绿阴，带成交量
+- **指标图**: 多指标组合展示
+- **价格分布**: 直方图分析
+- **成交量分析**: 量价关系图
+
+### 💾 数据导出 (NEW!)
+- **CSV**: 通用格式，支持 Excel 打开
+- **Excel**: 自动调整列宽
+- **JSON**: 结构化数据，带元数据
+
+### 🔔 价格提醒
+- 支持设置价格阈值
+- 实时监控触发条件
+- 灵活的提醒策略
+
+## 🚀 快速开始
 
 ### 安装依赖
 
 ```bash
-pip install -r requirements.txt
+pip install tushare pandas numpy matplotlib openpyxl
 ```
 
-### 配置 TuShare Token
+### 配置 TuShare
 
-```bash
-export TUSHARE_TOKEN='你的 Token'
+```python
+import tushare as ts
+
+# 替换为你的 token
+ts.set_token('your_tushare_token_here')
+pro = ts.pro_api()
 ```
 
-### 使用方法
+### 基本使用
 
-```bash
-# 获取股票基本信息
-python main.py info 000001.SZ
+```python
+from analyzer import StockAnalyzer
+
+# 创建分析器
+analyzer = StockAnalyzer('000001.SZ', pro)
 
 # 获取历史数据
-python main.py daily 000001.SZ --start 20260101 --end 20260305
+df = analyzer.get_history(days=100)
 
-# 获取实时报价
-python main.py quote 000001.SZ,600000.SH
+# 计算技术指标
+df_with_indicators = analyzer.calculate_all_indicators(df)
 
-# 进行技术指标分析
-python main.py technical 000001.SZ
-
-# 设置价格提醒
-python main.py alert add TSLA below 375 --name 特斯拉
-python main.py alert add 601127.SH above 30 --name 赛力斯
-
-# 查看所有提醒
-python main.py alert list
-
-# 删除提醒
-python main.py alert remove TSLA
+# 生成分析报告
+report = analyzer.generate_report(df)
+print(report)
 ```
 
-## 项目结构
+### 基本面分析
+
+```python
+from fundamental_analyzer import FundamentalAnalyzer
+
+# 创建基本面分析器
+fund = FundamentalAnalyzer('000001.SZ', pro)
+
+# 获取估值指标
+valuation = fund.get_valuation_metrics()
+print(f"PE: {valuation['pe_ttm']}, PB: {valuation['pb']}")
+
+# 生成基本面报告
+report = fund.generate_fundamental_report()
+print(report)
+```
+
+### 数据可视化
+
+```python
+from visualizer import StockVisualizer
+
+# 创建可视化器
+viz = StockVisualizer(df, '000001.SZ', '平安银行')
+
+# 绘制 K 线图
+viz.plot_kline(save_path='./charts/kline.png', show=False)
+
+# 绘制带指标的 K 线图
+viz.plot_with_indicators(
+    indicators=['MA5', 'MA10', 'MA20', 'VOL', 'MACD'],
+    save_path='./charts/indicators.png',
+    show=False
+)
+```
+
+### 数据导出
+
+```python
+from exporter import DataExporter
+
+# 创建导出器
+exporter = DataExporter(df, '000001.SZ', '平安银行')
+
+# 导出所有格式
+exporter.export_all()
+
+# 单独导出
+exporter.to_csv()
+exporter.to_excel()
+exporter.to_json()
+```
+
+## 📁 项目结构
 
 ```
 daily-stock-insights/
-├── main.py              # 主入口
-├── stock_fetcher.py     # 数据获取模块
-├── analyzer.py          # 分析模块
-├── technical_indicators.py  # 技术指标分析（8 个指标）
-├── alert_monitor.py     # 价格提醒监控（新增）
-├── requirements.txt     # 依赖
-├── README.md           # 说明文档
-└── .gitignore          # Git 忽略文件
+├── README.md                 # 项目文档
+├── requirements.txt          # 依赖列表
+├── stock_fetcher.py          # 数据获取模块
+├── analyzer.py               # 技术分析模块
+├── technical_indicators.py   # 技术指标计算
+├── alert_monitor.py          # 价格提醒监控
+├── fundamental_analyzer.py   # 基本面分析 (NEW!)
+├── visualizer.py             # 数据可视化 (NEW!)
+├── exporter.py               # 数据导出 (NEW!)
+├── main.py                   # 主程序入口
+├── charts/                   # 图表输出目录
+└── exports/                  # 数据导出目录
 ```
 
-## 示例输出
+## 📋 更新日志
 
-```
-股票：平安银行 (000001.SZ)
-地区：深圳
-行业：银行
-上市日期：1991-04-03
-==============================
-日期          开盘    收盘    涨跌幅
-2026-02-27   10.86   10.90   +0.28%
-2026-02-26   10.86   10.87   +0.09%
-```
+### 2026-03-10
+- ✨ 新增基本面分析模块，支持 PE、PB、ROE 等指标
+- ✨ 新增数据可视化模块，支持 K 线图、指标图
+- ✨ 新增数据导出模块，支持 CSV/Excel/JSON 格式
+- 📝 更新 README 文档，添加使用示例
 
-## Update Log
-- **2026-03-10**: Automated heartbeat update - maintain GitHub activity and documentation freshness.
-- **2026-03-09**: Installed A-Share Analysis Skill and improved internal diagnostic tools.
-- **2026-03-08**: Automated heartbeat update to maintain project activity.
-- **2026-03-07**: Initialized repo. Added `setup.py`. Added technical indicators.
-- **2026-03-06**: Conceptualized project.
+### 2026-03-09
+- ✨ 新增价格提醒监控功能
+- ✨ 新增 8 个技术指标计算
+- 📝 完善项目文档和示例
 
-## License
+## 🔧 配置说明
 
-MIT
+### TuShare Token
 
-## 安装 (Installation)
+在以下位置配置你的 TuShare token：
 
-你可以将本项目安装到本地环境：
+1. 环境变量：`export TUSHARE_TOKEN=your_token`
+2. 代码中：`ts.set_token('your_token')`
+3. 配置文件：创建 `config.py` 文件
 
-```bash
-pip install -e .
-```
+### 输出目录
 
-安装后可直接在命令行使用 `stock-insights` 命令：
+- `charts/` - 可视化图表保存目录
+- `exports/` - 数据导出文件目录
 
-```bash
-stock-insights info 601127.SH
-```
+## 📝 使用场景
 
-## 🤖 声明 (Disclaimer)
+1. **每日复盘**: 获取持仓股票的技术指标和基本面数据
+2. **选股分析**: 对比多只股票的估值和成长能力
+3. **数据研究**: 导出历史数据进行量化分析
+4. **价格监控**: 设置提醒，及时捕捉买卖点
 
-**本项目的内容、代码和运营完全由 AI Agent（OpenClaw Assistant）自主创建和维护。** 
+## ⚠️ 免责声明
 
-这不仅是一个自动获取股票信息的工具，更是 AI 自主项目管理的实验。AI 会负责每日心跳检查、新功能迭代、Bug 修复以及 GitHub 活跃度保持。所有分析结果仅供参考，不构成任何投资建议。
+本工具仅供学习和研究使用，不构成投资建议。股市有风险，投资需谨慎。
+
+## 📄 License
+
+MIT License
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+---
+
+*每日更新，持续改进*

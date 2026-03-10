@@ -1,291 +1,262 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Daily Stock Insights - 主程序
+Daily Stock Insights - 每日股票洞察
+主程序入口
 """
 
+import tushare as ts
 import os
-import sys
-import argparse
+from datetime import datetime
+from typing import Optional
+
 from stock_fetcher import StockFetcher
-from analyzer import StockAnalyzer, calculate_support_resistance, detect_patterns
-from technical_indicators import get_technical_indicators, generate_technical_report
-from alert_monitor import PriceAlert
+from analyzer import StockAnalyzer
+from fundamental_analyzer import FundamentalAnalyzer
+from visualizer import StockVisualizer, generate_visualization_report
+from exporter import DataExporter
+from alert_monitor import AlertMonitor
 
 
-def cmd_stock_info(args):
-    """获取股票基本信息"""
-    fetcher = StockFetcher(args.token)
+def init_tushare() -> Optional[ts.pro_api]:
+    """初始化 TuShare API
     
-    stocks = fetcher.get_stock_basic(args.symbol)
+    Returns:
+        pro API 实例或 None
+    """
+    # 尝试从环境变量获取 token
+    token = os.getenv('TUSHARE_TOKEN')
     
-    if not stocks:
-        print(f"未找到股票：{args.symbol}")
-        return
+    if not token:
+        print("⚠️  未找到 TUSHARE_TOKEN 环境变量")
+        print("请在 https://tushare.pro 注册并获取 token")
+        print("然后设置：export TUSHARE_TOKEN='your_token'")
+        return None
     
-    for stock in stocks:
-        print(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-        print(f"股票代码：{stock.get('ts_code')}")
-        print(f"股票简称：{stock.get('symbol')}")
-        print(f"股票全称：{stock.get('name')}")
-        print(f"所在地区：{stock.get('area')}")
-        print(f"所属行业：{stock.get('industry')}")
-        print(f"上市日期：{stock.get('list_date')}")
-        print(f"交易所：   {stock.get('exchange')}")
-        print(f"市场：     {stock.get('market')}")
-        print(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    ts.set_token(token)
+    try:
+        pro = ts.pro_api()
+        print("✓ TuShare API 初始化成功")
+        return pro
+    except Exception as e:
+        print(f"❌ TuShare API 初始化失败：{e}")
+        return None
 
 
-def cmd_daily(args):
-    """获取历史行情"""
-    fetcher = StockFetcher(args.token)
+def daily_analysis(ts_code: str, name: str, pro: ts.pro_api, 
+                   days: int = 100, output_charts: bool = True,
+                   export_data: bool = True) -> dict:
+    """执行每日分析
     
-    data = fetcher.get_daily(
-        args.symbol, 
-        start_date=args.start,
-        end_date=args.end
-    )
+    Args:
+        ts_code: 股票代码
+        name: 股票名称
+        pro: TuShare pro API
+        days: 分析天数
+        output_charts: 是否输出图表
+        export_data: 是否导出数据
     
-    if not data:
-        print(f"未获取到数据：{args.symbol}")
-        return
+    Returns:
+        分析结果字典
+    """
+    print(f"\n{'='*60}")
+    print(f"📊 每日股票洞察 - {name} ({ts_code})")
+    print(f"分析日期：{datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    print(f"{'='*60}\n")
     
-    # 显示数据
-    print(f"\n📈 {args.symbol} 行情数据")
-    print(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    print(f"{'日期':<12} {'开盘':>8} {'最高':>8} {'最低':>8} {'收盘':>8} {'涨跌幅':>10}")
-    print(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    results = {
+        'ts_code': ts_code,
+        'name': name,
+        'analysis_date': datetime.now().isoformat(),
+        'technical': {},
+        'fundamental': {},
+        'charts': [],
+        'exports': []
+    }
     
-    for row in data[:args.limit]:
-        trade_date = row.get('trade_date', '')
-        if trade_date:
-            # 格式化日期
-            if len(trade_date) == 8:
-                trade_date = f"{trade_date[:4]}-{trade_date[4:6]}-{trade_date[6:]}"
+    # 1. 获取历史数据
+    print("📥 获取历史数据...")
+    fetcher = StockFetcher(pro)
+    df = fetcher.get_daily(ts_code, start_date='', end_date='', limit=days)
+    
+    if df is None or df.empty:
+        print("❌ 无法获取股票数据")
+        return results
+    
+    print(f"✓ 获取到 {len(df)} 条数据")
+    
+    # 2. 技术分析
+    print("\n📈 技术分析...")
+    analyzer = StockAnalyzer(ts_code, pro)
+    df_with_indicators = analyzer.calculate_all_indicators(df)
+    
+    # 获取最新数据
+    latest = df_with_indicators.iloc[-1]
+    prev = df_with_indicators.iloc[-2] if len(df_with_indicators) > 1 else latest
+    
+    results['technical'] = {
+        'date': latest.get('trade_date', ''),
+        'close': latest.get('close', 0),
+        'change': latest.get('close', 0) - prev.get('close', 0),
+        'change_pct': ((latest.get('close', 0) / prev.get('close', 1) - 1) * 100) if prev.get('close', 0) != 0 else 0,
+        'volume': latest.get('vol', 0),
+        'ma5': latest.get('close_ma5', 0),
+        'ma10': latest.get('close_ma10', 0),
+        'ma20': latest.get('close_ma20', 0),
+        'macd': latest.get('macd', 0),
+        'rsi': latest.get('rsi', 0),
+        'kdj_k': latest.get('kdj_k', 0),
+        'kdj_d': latest.get('kdj_d', 0),
+        'kdj_j': latest.get('kdj_j', 0),
+        'cci': latest.get('cci', 0),
+        'boll_upper': latest.get('boll_upper', 0),
+        'boll_lower': latest.get('boll_lower', 0)
+    }
+    
+    # 打印技术摘要
+    print(f"\n最新价格：{results['technical']['close']:.2f}")
+    print(f"涨跌幅：{results['technical']['change']:+.2f} ({results['technical']['change_pct']:+.2f}%)")
+    print(f"成交量：{results['technical']['volume']:,.0f}")
+    print(f"MA5: {results['technical']['ma5']:.2f}, MA10: {results['technical']['ma10']:.2f}, MA20: {results['technical']['ma20']:.2f}")
+    print(f"RSI: {results['technical']['rsi']:.2f}, KDJ: {results['technical']['kdj_k']:.1f}/{results['technical']['kdj_d']:.1f}/{results['technical']['kdj_j']:.1f}")
+    
+    # 3. 基本面分析
+    print("\n🏢 基本面分析...")
+    fundamental = FundamentalAnalyzer(ts_code, pro)
+    
+    valuation = fundamental.get_valuation_metrics()
+    profitability = fundamental.get_profitability_metrics()
+    growth = fundamental.get_growth_metrics()
+    
+    results['fundamental'] = {
+        'pe_ttm': valuation.get('pe_ttm'),
+        'pb': valuation.get('pb'),
+        'dv_ratio': valuation.get('dv_ratio'),
+        'roe': profitability.get('roe_wa'),
+        'gross_margin': profitability.get('gross_margin'),
+        'yoy_sales': growth.get('yoy_sales'),
+        'yoy_net_profit': growth.get('yoy_net_profit'),
+    }
+    
+    if valuation:
+        print(f"PE(TTM): {valuation.get('pe_ttm', 'N/A')}")
+        print(f"PB: {valuation.get('pb', 'N/A')}")
+        print(f"股息率：{valuation.get('dv_ratio', 'N/A')}%")
+    if profitability:
+        print(f"ROE: {profitability.get('roe_wa', 'N/A')}%")
+        print(f"毛利率：{profitability.get('gross_margin', 'N/A')}%")
+    if growth:
+        print(f"营收增速：{growth.get('yoy_sales', 'N/A')}%")
+        print(f"净利润增速：{growth.get('yoy_net_profit', 'N/A')}%")
+    
+    # 4. 生成分析报告
+    print("\n" + "="*60)
+    tech_report = analyzer.generate_report(df_with_indicators)
+    print(tech_report)
+    
+    fund_report = fundamental.generate_fundamental_report()
+    print(fund_report)
+    
+    # 5. 可视化
+    if output_charts:
+        print("\n📊 生成可视化图表...")
+        os.makedirs('charts', exist_ok=True)
+        os.makedirs('exports', exist_ok=True)
         
-        print(f"{trade_date:<12} "
-              f"{row.get('open', 0):>8.2f} "
-              f"{row.get('high', 0):>8.2f} "
-              f"{row.get('low', 0):>8.2f} "
-              f"{row.get('close', 0):>8.2f} "
-              f"{row.get('pct_change', 0):>9.2f}%")
+        viz = StockVisualizer(df_with_indicators, ts_code, name)
+        
+        # K 线图
+        kline_path = f"charts/{ts_code}_kline_{datetime.now().strftime('%Y%m%d')}.png"
+        viz.plot_kline(save_path=kline_path, show=False)
+        results['charts'].append(kline_path)
+        
+        # 指标图
+        indicators_path = f"charts/{ts_code}_indicators_{datetime.now().strftime('%Y%m%d')}.png"
+        viz.plot_with_indicators(
+            indicators=['MA5', 'MA10', 'MA20', 'VOL', 'MACD'],
+            save_path=indicators_path,
+            show=False
+        )
+        results['charts'].append(indicators_path)
+        
+        print(f"✓ 已生成 {len(results['charts'])} 张图表")
     
-    # 分析数据
-    if args.analyze:
-        print(f"\n📊 数据分析")
-        print(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-        analyzer = StockAnalyzer(data)
-        print(analyzer.generate_summary())
+    # 6. 数据导出
+    if export_data:
+        print("\n💾 导出数据...")
+        exporter = DataExporter(df_with_indicators, ts_code, name)
         
-        # 支撑位和阻力位
-        sr = calculate_support_resistance(data)
-        print(f"支撑位：{sr['support']}")
-        print(f"阻力位：{sr['resistance']}")
+        export_paths = exporter.export_all()
+        results['exports'] = list(export_paths.values())
         
-        # 技术形态
-        patterns = detect_patterns(data)
-        if patterns:
-            print(f"\n🔍 检测到形态：{', '.join(patterns)}")
+        print(f"✓ 已导出 {len(results['exports'])} 个文件")
+    
+    # 7. 检查提醒
+    print("\n🔔 检查价格提醒...")
+    monitor = AlertMonitor(pro)
+    alerts = monitor.check_alerts(ts_code)
+    if alerts:
+        print(f"⚠️  触发 {len(alerts)} 个价格提醒:")
+        for alert in alerts:
+            print(f"   - {alert['type']}: {alert['condition']} (当前：{alert['current_price']})")
+    else:
+        print("✓ 无触发的价格提醒")
+    
+    print(f"\n{'='*60}")
+    print("✅ 分析完成!")
+    print(f"{'='*60}\n")
+    
+    return results
 
 
-def cmd_quote(args):
-    """获取实时报价"""
-    fetcher = StockFetcher(args.token)
+def run_daily_task(ts_codes: list = None, output_charts: bool = True,
+                   export_data: bool = True):
+    """执行每日任务
     
-    symbols = args.symbols.split(',')
-    data = fetcher.get_realtime_quote(symbols)
-    
-    if not data:
-        print("未获取到实时数据")
+    Args:
+        ts_codes: 股票代码列表
+        output_charts: 是否输出图表
+        export_data: 是否导出数据
+    """
+    # 初始化 TuShare
+    pro = init_tushare()
+    if not pro:
         return
     
-    print(f"\n📈 实时报价")
-    print(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    print(f"{'代码':<12} {'名称':<10} {'现价':>8} {'涨跌':>8} {'涨跌幅':>10}")
-    print(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    # 默认股票池（可自定义）
+    if not ts_codes:
+        ts_codes = [
+            ('000001.SZ', '平安银行'),
+            ('000002.SZ', '万科 A'),
+            ('600000.SH', '浦发银行'),
+        ]
     
-    for row in data:
-        print(f"{row.get('ts_code'):<12} "
-              f"{row.get('name', ''):<10} "
-              f"{row.get('close', 0):>8.2f} "
-              f"{row.get('change', 0):>8.2f} "
-              f"{row.get('pct_change', 0):>9.2f}%")
-
-
-def cmd_watchlist(args):
-    """监控自选股"""
-    fetcher = StockFetcher(args.token)
-    
-    watchlist = args.symbols.split(',')
-    
-    print(f"\n📋 自选股监控")
-    print(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    
-    for symbol in watchlist:
-        # 获取基本信息
-        stocks = fetcher.get_stock_basic(symbol.strip())
-        if stocks:
-            stock = stocks[0]
-            print(f"\n📌 {stock.get('name')} ({symbol})")
-            print(f"   行业：{stock.get('industry')}")
-            print(f"   地区：{stock.get('area')}")
-        
-        # 获取最新行情
-        data = fetcher.get_daily(symbol.strip(), start_date=args.start, end_date=args.end)
-        if data:
-            latest = data[0]
-            print(f"   收盘：{latest.get('close')} ({latest.get('pct_change'):.2f}%)")
-
-
-def cmd_technical(args):
-    """技术指标分析"""
-    fetcher = StockFetcher(args.token)
-    
-    # 获取历史数据
-    data = fetcher.get_daily(
-        args.symbol,
-        start_date=args.start,
-        end_date=args.end
-    )
-    
-    if not data:
-        print(f"未获取到数据：{args.symbol}")
-        return
-    
-    # 确保有足够的数据进行分析
-    if len(data) < 30:
-        print(f"⚠️  数据不足（当前{len(data)}条），建议获取至少 30 天数据")
-        print(f"   使用 --start 参数获取更多数据")
-    
-    # 生成技术分析报告
-    print(generate_technical_report(data, args.symbol))
-
-
-def cmd_alert(args):
-    """价格提醒管理"""
-    alert = PriceAlert()
-    
-    if args.action == "add":
-        alert.add_alert(args.symbol, args.type, args.price, args.name)
-    elif args.action == "list":
-        alert.list_alerts(args.symbol if hasattr(args, 'symbol') else None)
-    elif args.action == "remove":
-        idx = args.index if hasattr(args, 'index') else None
-        alert.remove_alert(args.symbol, idx)
-    elif args.action == "check":
-        # 检查当前价格是否触发提醒
-        fetcher = StockFetcher(args.token)
-        data = fetcher.get_realtime_quote([args.symbol])
-        if data:
-            current = data[0]
-            triggered = alert.check_alerts({
-                args.symbol: {
-                    'price': current.get('close', 0),
-                    'name': current.get('name', args.symbol)
-                }
-            })
-            alert.print_triggered_alerts(triggered)
-        else:
-            print(f"⚠️  无法获取 {args.symbol} 的当前价格")
-
-
-def main():
-    """主函数"""
-    parser = argparse.ArgumentParser(
-        description="📈 Daily Stock Insights - 每日股票数据分析工具",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-示例:
-  %(prog)s info 000001.SZ                    查看股票基本信息
-  %(prog)s daily 000001.SZ --start 20260101  获取历史行情
-  %(prog)s daily 000001.SZ --analyze         获取并分析行情
-  %(prog)s quote 000001.SZ,600000.SH         获取实时报价
-  %(prog)s watch 000001.SZ,600000.SH          监控自选股
-  %(prog)s technical 000001.SZ --days 60     技术指标分析
-        """
-    )
-    
-    parser.add_argument("--token", help="TuShare API Token")
-    
-    subparsers = parser.add_subparsers(dest="command", help="可用命令")
-    
-    # info 命令
-    info_parser = subparsers.add_parser("info", help="获取股票基本信息")
-    info_parser.add_argument("symbol", help="股票代码")
-    
-    # daily 命令
-    daily_parser = subparsers.add_parser("daily", help="获取历史行情")
-    daily_parser.add_argument("symbol", help="股票代码")
-    daily_parser.add_argument("--start", "-s", help="开始日期 YYYYMMDD")
-    daily_parser.add_argument("--end", "-e", help="结束日期 YYYYMMDD")
-    daily_parser.add_argument("--limit", "-l", type=int, default=30, help="显示条数 默认30")
-    daily_parser.add_argument("--analyze", "-a", action="store_true", help="分析数据")
-    
-    # quote 命令
-    quote_parser = subparsers.add_parser("quote", help="获取实时报价")
-    quote_parser.add_argument("symbols", help="股票代码，用逗号分隔")
-    
-    # watch 命令
-    watch_parser = subparsers.add_parser("watch", help="监控自选股")
-    watch_parser.add_argument("symbols", help="股票代码，用逗号分隔")
-    watch_parser.add_argument("--start", "-s", help="开始日期 YYYYMMDD")
-    watch_parser.add_argument("--end", "-e", help="结束日期 YYYYMMDD")
-    
-    # technical 命令
-    technical_parser = subparsers.add_parser("technical", help="技术指标分析")
-    technical_parser.add_argument("symbol", help="股票代码")
-    technical_parser.add_argument("--start", "-s", help="开始日期 YYYYMMDD")
-    technical_parser.add_argument("--end", "-e", help="结束日期 YYYYMMDD")
-    
-    # alert 命令
-    alert_parser = subparsers.add_parser("alert", help="价格提醒管理")
-    alert_subparsers = alert_parser.add_subparsers(dest="action", help="提醒操作")
-    
-    # alert add
-    alert_add = alert_subparsers.add_parser("add", help="添加价格提醒")
-    alert_add.add_argument("symbol", help="股票代码")
-    alert_add.add_argument("type", choices=['above', 'below', 'cross'], help="提醒类型")
-    alert_add.add_argument("price", type=float, help="目标价格")
-    alert_add.add_argument("--name", "-n", help="股票名称")
-    
-    # alert list
-    alert_list = alert_subparsers.add_parser("list", help="列出提醒")
-    alert_list.add_argument("symbol", nargs="?", help="股票代码（可选）")
-    
-    # alert remove
-    alert_remove = alert_subparsers.add_parser("remove", help="删除提醒")
-    alert_remove.add_argument("symbol", help="股票代码")
-    alert_remove.add_argument("--index", "-i", type=int, help="提醒编号")
-    
-    # alert check
-    alert_check = alert_subparsers.add_parser("check", help="检查提醒")
-    alert_check.add_argument("symbol", help="股票代码")
-    
-    args = parser.parse_args()
-    
-    if not args.command:
-        parser.print_help()
-        return
-    
-    # 检查 token
-    if not args.token and not os.getenv('TUSHARE_TOKEN'):
-        print("请设置 TUSHARE_TOKEN 环境变量或使用 --token 参数")
-        sys.exit(1)
-    
-    # 执行命令
-    if args.command == "info":
-        cmd_stock_info(args)
-    elif args.command == "daily":
-        cmd_daily(args)
-    elif args.command == "quote":
-        cmd_quote(args)
-    elif args.command == "watch":
-        cmd_watchlist(args)
-    elif args.command == "technical":
-        cmd_technical(args)
-    elif args.command == "alert":
-        cmd_alert(args)
+    # 遍历股票池
+    for ts_code, name in ts_codes:
+        try:
+            daily_analysis(
+                ts_code=ts_code,
+                name=name,
+                pro=pro,
+                output_charts=output_charts,
+                export_data=export_data
+            )
+        except Exception as e:
+            print(f"❌ {name} 分析失败：{e}")
+            continue
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    
+    # 命令行参数
+    if len(sys.argv) > 1:
+        ts_code = sys.argv[1]
+        name = sys.argv[2] if len(sys.argv) > 2 else ''
+        
+        pro = init_tushare()
+        if pro:
+            daily_analysis(ts_code, name, pro)
+    else:
+        # 无参数时执行默认股票池
+        run_daily_task()
