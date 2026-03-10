@@ -13,12 +13,16 @@ import numpy as np
 class StockAnalyzer:
     """股票数据分析器"""
     
-    def __init__(self, data: List[Dict] = None):
+    def __init__(self, ts_code: str = None, pro = None, data: List[Dict] = None):
         """初始化
         
         Args:
+            ts_code: 股票代码
+            pro: TuShare pro API 实例
             data: 股票数据列表
         """
+        self.ts_code = ts_code
+        self.pro = pro
         self.data = sorted(data, key=lambda x: x.get('trade_date', ''), reverse=True) if data else []
     
     def calculate_ma(self, period: int = 5) -> float:
