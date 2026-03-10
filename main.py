@@ -15,7 +15,7 @@ from analyzer import StockAnalyzer
 from fundamental_analyzer import FundamentalAnalyzer
 from visualizer import StockVisualizer, generate_visualization_report
 from exporter import DataExporter
-from alert_monitor import AlertMonitor
+from alert_monitor import PriceAlert as AlertMonitor
 
 
 def init_tushare() -> Optional[ts.pro_api]:
@@ -76,8 +76,8 @@ def daily_analysis(ts_code: str, name: str, pro: ts.pro_api,
     
     # 1. 获取历史数据
     print("📥 获取历史数据...")
-    fetcher = StockFetcher(pro)
-    df = fetcher.get_daily(ts_code, start_date='', end_date='', limit=days)
+    fetcher = StockFetcher()
+    df = fetcher.get_daily(ts_code, start_date=None, end_date=None)
     
     if df is None or df.empty:
         print("❌ 无法获取股票数据")

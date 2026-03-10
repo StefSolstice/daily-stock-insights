@@ -8,6 +8,7 @@ import os
 import sys
 import json
 import requests
+import pandas as pd
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 
@@ -21,9 +22,13 @@ class StockFetcher:
         """初始化
         
         Args:
-            token: TuShare API Token，默认从环境变量读取
+            token: TuShare API Token，默认从环境变量读取；也可以是 pro_api 对象
         """
-        self.token = token or os.getenv('TUSHARE_TOKEN')
+        # 如果传入的是 pro_api 对象，提取 token
+        if hasattr(token, 'token'):
+            self.token = token.token
+        else:
+            self.token = token or os.getenv('TUSHARE_TOKEN')
         if not self.token:
             raise ValueError("请设置 TUSHARE_TOKEN 环境变量")
     
@@ -110,7 +115,16 @@ class StockFetcher:
         items = result.get("data", {}).get("items", [])
         fields_list = result.get("data", {}).get("fields", [])
         
-        return [dict(zip(fields_list, item)) for item in items]
+        if not items:
+            return pd.DataFrame()
+        
+        df = pd.DataFrame(items, columns=fields_list)
+        # 将数值列转换为数字类型
+        numeric_cols = ['open', 'high', 'low', 'close', 'pre_close', 'change', 'pct_change', 'vol', 'amount']
+        for col in numeric_cols:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+        return df
     
     def get_realtime_quote(self, symbols: List[str]) -> List[Dict]:
         """获取实时行情（需要实时行情权限）
