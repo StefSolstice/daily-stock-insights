@@ -124,38 +124,45 @@ def daily_analysis(ts_code: str, name: str, pro: ts.pro_api,
     print("\n🏢 基本面分析...")
     fundamental = FundamentalAnalyzer(ts_code, pro)
     
-    valuation = fundamental.get_valuation_metrics()
-    profitability = fundamental.get_profitability_metrics()
-    growth = fundamental.get_growth_metrics()
-    
-    results['fundamental'] = {
-        'pe_ttm': valuation.get('pe_ttm'),
-        'pb': valuation.get('pb'),
-        'dv_ratio': valuation.get('dv_ratio'),
-        'roe': profitability.get('roe_wa'),
-        'gross_margin': profitability.get('gross_margin'),
-        'yoy_sales': growth.get('yoy_sales'),
-        'yoy_net_profit': growth.get('yoy_net_profit'),
-    }
-    
-    if valuation:
-        print(f"PE(TTM): {valuation.get('pe_ttm', 'N/A')}")
-        print(f"PB: {valuation.get('pb', 'N/A')}")
-        print(f"股息率：{valuation.get('dv_ratio', 'N/A')}%")
-    if profitability:
-        print(f"ROE: {profitability.get('roe_wa', 'N/A')}%")
-        print(f"毛利率：{profitability.get('gross_margin', 'N/A')}%")
-    if growth:
-        print(f"营收增速：{growth.get('yoy_sales', 'N/A')}%")
-        print(f"净利润增速：{growth.get('yoy_net_profit', 'N/A')}%")
+    try:
+        valuation = fundamental.get_valuation_metrics()
+        profitability = fundamental.get_profitability_metrics()
+        growth = fundamental.get_growth_metrics()
+        
+        results['fundamental'] = {
+            'pe_ttm': valuation.get('pe_ttm'),
+            'pb': valuation.get('pb'),
+            'dv_ratio': valuation.get('dv_ratio'),
+            'roe': profitability.get('roe_wa'),
+            'gross_margin': profitability.get('gross_margin'),
+            'yoy_sales': growth.get('yoy_sales'),
+            'yoy_net_profit': growth.get('yoy_net_profit'),
+        }
+        
+        if valuation:
+            print(f"PE(TTM): {valuation.get('pe_ttm', 'N/A')}")
+            print(f"PB: {valuation.get('pb', 'N/A')}")
+            print(f"股息率：{valuation.get('dv_ratio', 'N/A')}%")
+        if profitability:
+            print(f"ROE: {profitability.get('roe_wa', 'N/A')}%")
+            print(f"毛利率：{profitability.get('gross_margin', 'N/A')}%")
+        if growth:
+            print(f"营收增速：{growth.get('yoy_sales', 'N/A')}%")
+            print(f"净利润增速：{growth.get('yoy_net_profit', 'N/A')}%")
+    except Exception as e:
+        print(f"⚠️  基本面分析跳过：{e}")
+        results['fundamental'] = {'error': str(e)}
     
     # 4. 生成分析报告
     print("\n" + "="*60)
-    tech_report = analyzer.generate_report(df_with_indicators)
+    tech_report = analyzer.generate_summary(df_with_indicators)
     print(tech_report)
     
-    fund_report = fundamental.generate_fundamental_report()
-    print(fund_report)
+    try:
+        fund_report = fundamental.generate_fundamental_report()
+        print(fund_report)
+    except Exception as e:
+        print(f"⚠️  基本面报告跳过：{e}")
     
     # 5. 可视化
     if output_charts:
@@ -163,7 +170,12 @@ def daily_analysis(ts_code: str, name: str, pro: ts.pro_api,
         os.makedirs('charts', exist_ok=True)
         os.makedirs('exports', exist_ok=True)
         
-        viz = StockVisualizer(df_with_indicators, ts_code, name)
+        # 重命名 trade_date 为 date，适配 visualizer
+        df_for_viz = df_with_indicators.copy()
+        if 'trade_date' in df_for_viz.columns and 'date' not in df_for_viz.columns:
+            df_for_viz = df_for_viz.rename(columns={'trade_date': 'date'})
+        
+        viz = StockVisualizer(df_for_viz, ts_code, name)
         
         # K 线图
         kline_path = f"charts/{ts_code}_kline_{datetime.now().strftime('%Y%m%d')}.png"
@@ -193,14 +205,19 @@ def daily_analysis(ts_code: str, name: str, pro: ts.pro_api,
     
     # 7. 检查提醒
     print("\n🔔 检查价格提醒...")
-    monitor = AlertMonitor(pro)
-    alerts = monitor.check_alerts(ts_code)
-    if alerts:
-        print(f"⚠️  触发 {len(alerts)} 个价格提醒:")
-        for alert in alerts:
-            print(f"   - {alert['type']}: {alert['condition']} (当前：{alert['current_price']})")
-    else:
-        print("✓ 无触发的价格提醒")
+    try:
+        monitor = AlertMonitor()  # 使用默认 alerts.json 配置文件
+        current_price = df_with_indicators.iloc[0]['close']
+        current_prices = {ts_code: {'price': current_price, 'name': name}}
+        alerts = monitor.check_alerts(current_prices)
+        if alerts:
+            print(f"⚠️  触发 {len(alerts)} 个价格提醒:")
+            for alert in alerts:
+                print(f"   - {alert['type']}: {alert['condition']} (当前：{alert['current_price']})")
+        else:
+            print("✓ 无触发的价格提醒")
+    except Exception as e:
+        print(f"⚠️  价格提醒检查跳过：{e}")
     
     print(f"\n{'='*60}")
     print("✅ 分析完成!")
