@@ -1,5 +1,19 @@
-tushare>=1.2.89
-pandas>=1.5.0
-numpy>=1.23.0
-matplotlib>=3.6.0
-openpyxl>=3.0.0
+# Web UI 依赖
+Flask==3.0.0
+Flask-Login==0.6.3
+Flask-WTF==1.2.1
+Werkzeug==3.0.1
+bcrypt==4.1.2
+python-dotenv==1.0.0
+
+# 数据分析（已有）
+pandas==2.1.4
+numpy==1.26.2
+tushare==1.2.9
+
+# 可视化
+matplotlib==3.8.2
+plotly==5.18.0
+
+# 导出
+openpyxl==3.1.2

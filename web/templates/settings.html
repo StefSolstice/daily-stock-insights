@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}设置 - Daily Stock Insights{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-gear"></i> 设置</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-person"></i> 账户信息
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">用户名</label>
+                    <input type="text" class="form-control" value="{{ current_user.username }}" disabled>
+                </div>
+                <button class="btn btn-primary">
+                    <i class="bi bi-pencil"></i> 修改密码
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-key"></i> API 配置
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">TuShare Token</label>
+                    <input type="password" class="form-control" value="**********************" disabled>
+                    <small class="text-muted">在 .env 文件中配置</small>
+                </div>
+                <a href="https://tushare.pro" target="_blank" class="btn btn-outline-primary">
+                    <i class="bi bi-box-arrow-up-right"></i> 获取 TuShare Token
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-info-circle"></i> 系统信息
+    </div>
+    <div class="card-body">
+        <table class="table table-borderless">
+            <tr>
+                <td style="width: 150px;">系统版本</td>
+                <td>1.0.0</td>
+            </tr>
+            <tr>
+                <td>最后更新</td>
+                <td>2026-03-10</td>
+            </tr>
+            <tr>
+                <td>技术栈</td>
+                <td>Flask + SQLite + Bootstrap</td>
+            </tr>
+        </table>
+    </div>
+</div>
+{% endblock %}
