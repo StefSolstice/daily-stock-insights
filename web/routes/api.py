@@ -11,9 +11,14 @@ api_bp = Blueprint('api', __name__)
 
 # 导入分析模块 - 使用绝对路径
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, PROJECT_ROOT)
-from analyzer import StockAnalyzer
-from stock_fetcher import StockFetcher
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+# 延迟导入，避免循环依赖
+def get_analyzer():
+    from analyzer import StockAnalyzer
+    from stock_fetcher import StockFetcher
+    return StockAnalyzer, StockFetcher
 
 @api_bp.route('/api/analyze')
 @login_required
@@ -22,6 +27,9 @@ def analyze_stock():
     ts_code = request.args.get('ts_code', '000001.SZ')
     
     try:
+        # 延迟导入
+        StockAnalyzer, StockFetcher = get_analyzer()
+        
         # 获取 TuShare token
         token = os.getenv('TUSHARE_TOKEN')
         if not token:

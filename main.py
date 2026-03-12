@@ -5,6 +5,17 @@ Daily Stock Insights - 每日股票洞察
 主程序入口
 """
 
+import sys
+import io
+# 兼容tushare和新版pandas
+# 先mock pandas.util.testing模块
+sys.modules['pandas.util.testing'] = type('obj', (object,), {
+    '_network_error_classes': (ConnectionError, IOError)
+})()
+
+import pandas.compat
+pandas.compat.StringIO = io.StringIO
+
 import tushare as ts
 import os
 from datetime import datetime

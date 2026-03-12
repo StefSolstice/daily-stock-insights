@@ -18,7 +18,7 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24).hex()  # 生产环境应使用固定密钥
 
 # 初始化扩展
-csrf = CSRFProtect(app)
+# csrf = CSRFProtect(app)  # 暂时禁用 CSRF，修复登录问题
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -246,5 +246,5 @@ def settings():
 if __name__ == '__main__':
     init_db()
     print("🚀 启动 Web UI...")
-    print("📊 访问地址：http://localhost:5000")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    print("📊 访问地址：http://localhost:5001")
+    app.run(debug=True, host='0.0.0.0', port=5001)

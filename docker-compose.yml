@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  daily-stock-insights:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - TUSHARE_TOKEN=${TUSHARE_TOKEN}
+    volumes:
+      - ./output:/app/output
+    command: python web/app.py
