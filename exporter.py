@@ -28,12 +28,14 @@ class DataExporter:
         self.name = name
     
     def to_csv(self, filepath: Optional[str] = None, 
-               include_index: bool = False) -> str:
+               include_index: bool = False,
+               output_dir: Optional[str] = None) -> str:
         """导出为 CSV
         
         Args:
             filepath: 文件路径，默认自动生成
             include_index: 是否包含索引
+            output_dir: 输出目录，默认自动生成
         
         Returns:
             文件路径
@@ -41,7 +43,11 @@ class DataExporter:
         if not filepath:
             date_str = datetime.now().strftime('%Y%m%d')
             stock_name = self.name.replace(' ', '') if self.name else self.ts_code
-            filepath = f"./exports/{self.ts_code}_{date_str}.csv"
+            if output_dir:
+                os.makedirs(output_dir, exist_ok=True)
+                filepath = f"{output_dir}/{self.ts_code}_{date_str}.csv"
+            else:
+                filepath = f"./exports/{self.ts_code}_{date_str}.csv"
         
         os.makedirs(os.path.dirname(filepath) if os.path.dirname(filepath) else '.', exist_ok=True)
         self.df.to_csv(filepath, index=include_index, encoding='utf-8-sig')
@@ -50,12 +56,14 @@ class DataExporter:
         return filepath
     
     def to_excel(self, filepath: Optional[str] = None,
-                sheet_name: str = 'Stock Data') -> str:
+                sheet_name: str = 'Stock Data',
+                output_dir: Optional[str] = None) -> str:
         """导出为 Excel
         
         Args:
             filepath: 文件路径
             sheet_name: 工作表名称
+            output_dir: 输出目录
         
         Returns:
             文件路径
@@ -63,7 +71,11 @@ class DataExporter:
         if not filepath:
             date_str = datetime.now().strftime('%Y%m%d')
             stock_name = self.name.replace(' ', '') if self.name else self.ts_code
-            filepath = f"./exports/{self.ts_code}_{date_str}.xlsx"
+            if output_dir:
+                os.makedirs(output_dir, exist_ok=True)
+                filepath = f"{output_dir}/{self.ts_code}_{date_str}.xlsx"
+            else:
+                filepath = f"./exports/{self.ts_code}_{date_str}.xlsx"
         
         os.makedirs(os.path.dirname(filepath) if os.path.dirname(filepath) else '.', exist_ok=True)
         
@@ -88,20 +100,26 @@ class DataExporter:
         return filepath
     
     def to_json(self, filepath: Optional[str] = None,
-                orient: str = 'records', pretty: bool = True) -> str:
+                orient: str = 'records', pretty: bool = True,
+                output_dir: Optional[str] = None) -> str:
         """导出为 JSON
         
         Args:
             filepath: 文件路径
             orient: JSON 方向
             pretty: 是否美化格式
+            output_dir: 输出目录
         
         Returns:
             文件路径
         """
         if not filepath:
             date_str = datetime.now().strftime('%Y%m%d')
-            filepath = f"./exports/{self.ts_code}_{date_str}.json"
+            if output_dir:
+                os.makedirs(output_dir, exist_ok=True)
+                filepath = f"{output_dir}/{self.ts_code}_{date_str}.json"
+            else:
+                filepath = f"./exports/{self.ts_code}_{date_str}.json"
         
         os.makedirs(os.path.dirname(filepath) if os.path.dirname(filepath) else '.', exist_ok=True)
         
