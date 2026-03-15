@@ -178,10 +178,12 @@ python main.py --help
 ### 查看分析结果
 
 ```bash
-# 生成直观的分析报告
+# 生成直观的分析报告（默认最新文件）
 python generate_report.py
 
-# 默认会分析最新的导出文件，也可以指定特定文件
+# 查看特定股票的报告
+python generate_report.py 000001.SZ
+python generate_report.py 600519.SH
 ```
 
 ## 📁 项目结构
