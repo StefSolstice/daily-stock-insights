@@ -94,8 +94,15 @@ def run_single_analysis(ts_code: str, start_date: str, end_date: str,
         df = ti.calculate_ma(df, window=5)
         df = ti.calculate_ma(df, window=10)
         df = ti.calculate_ma(df, window=20)
+        df = ti.calculate_ma(df, window=60)  # 年线
         df = ti.calculate_macd(df)
         df = ti.calculate_rsi(df)
+        df = ti.calculate_kdj(df)
+        df = ti.calculate_bollinger_bands(df)
+        df = ti.calculate_atr(df)
+        df = ti.calculate_vol_ma(df, window=5)
+        df = ti.calculate_vol_ma(df, window=10)
+        df = ti.calculate_vol_ma(df, window=20)
         
         # 将数据按日期降序排列（最新的在前，便于查看）
         df = df.sort_values('trade_date', ascending=False).reset_index(drop=True)
@@ -158,9 +165,9 @@ def run_daily_analysis(config: dict):
     if not stock_pool or len(stock_pool) == 0:
         stock_pool = default_stock_pool
     
-    # 计算日期（最近一个交易日）
+    # 计算日期（最近一个交易日），获取更多历史数据以确保技术指标的准确性
     end_date = datetime.now().strftime('%Y%m%d')
-    start_date = (datetime.now() - timedelta(days=60)).strftime('%Y%m%d')
+    start_date = (datetime.now() - timedelta(days=365)).strftime('%Y%m%d')  # 一年历史数据
     
     output_dir = './data/daily'
     
@@ -278,7 +285,8 @@ def main():
             end_date = args.end
         
         if not args.start:
-            start_date = (datetime.now() - timedelta(days=60)).strftime('%Y%m%d')
+            # 获取更多历史数据以确保技术指标的准确性（至少250个交易日）
+            start_date = (datetime.now() - timedelta(days=365)).strftime('%Y%m%d')
         else:
             start_date = args.start
         

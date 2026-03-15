@@ -1,32 +1,36 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-生成直观的股票分析报告
+增强版股票分析报告 - 添加操盘指导
 """
 
 import pandas as pd
 import os
+import sys
+from datetime import datetime
 
-def generate_intuitive_report(csv_file):
-    """生成直观的股票分析报告"""
 
+def generate_enhanced_report(csv_file):
+    """生成增强版分析报告，包含操盘指导"""
+    
     if not os.path.exists(csv_file):
         print(f"❌ 文件不存在: {csv_file}")
         return
-
+    
     # 读取CSV文件
     df = pd.read_csv(csv_file)
-
+    
     # 获取股票代码和名称
     ts_code = df['ts_code'].iloc[0] if 'ts_code' in df.columns else 'Unknown'
-
-    print('📊 股票数据分析报告')
+    
+    print('📊 增强版股票分析报告 - 操盘指导版')
     print('=' * 60)
     print(f'股票代码: {ts_code}')
     print(f'数据条目数: {len(df)}')
     print(f'日期范围: {df["trade_date"].iloc[-1]} 到 {df["trade_date"].iloc[0]}')
+    print('📊 数据说明: vol(成交量)单位为"手", amount(成交额)单位为"元"(API返回值为千元数值，显示为万元需除以10)')
     print()
-
+    
     # 显示最近5个交易日的详细数据
     print('📈 最近5个交易日详情:')
     print('-' * 80)
@@ -34,21 +38,21 @@ def generate_intuitive_report(csv_file):
     available_columns = [col for col in columns_needed if col in df.columns]
     recent_data = df.head(5)[available_columns]
     for idx, row in recent_data.iterrows():
-        # 注意：TuShare的vol单位是"手"(1手=100股)，amount单位是"千元"
-        vol_str = f"{int(row['vol']):,}"  # 显示为整数
-        # TuShare API的amount字段数值是千元为单位，显示为万元需要除以10
-        amount_wan = row['amount'] / 10  # 千元/10 = 万元
         # 修复日期浮点数显示
         trade_date = int(row['trade_date']) if not pd.isna(row['trade_date']) else row['trade_date']
+        # 修复成交量显示为整数
+        vol_int = int(row['vol']) if not pd.isna(row['vol']) else row['vol']
+        # 修复成交额单位
+        amount_wan = row['amount'] / 10  # 千元/10 = 万元
         print(f"📅 {trade_date} | "
               f"开盘:{row['open']:>7.2f} | "
               f"最高:{row['high']:>7.2f} | "
               f"最低:{row['low']:>7.2f} | "
               f"收盘:{row['close']:>7.2f} | "
-              f"成交量:{vol_str:>9}手 | "
+              f"成交量:{vol_int:,}手 | "
               f"成交额:{amount_wan:>7.1f}万")
     print()
-
+    
     # 价格统计
     print('💰 价格统计分析:')
     print('-' * 40)
@@ -58,19 +62,22 @@ def generate_intuitive_report(csv_file):
     print(f'平均收盘价: {df["close"].mean():>7.2f}')
     print(f'收盘价区间: {df["close"].min():.2f} ~ {df["close"].max():.2f}')
     print()
-
+    
     # 技术指标分析
     print('📊 技术指标分析:')
     print('-' * 40)
-
+    
     # MA指标 (寻找最近的有效值，而不仅仅是第一行)
     if 'close_ma5' in df.columns and not df['close_ma5'].isna().all():
         # 找到最近的有效MA值
         ma5_latest = df['close_ma5'].dropna().iloc[0] if not df['close_ma5'].dropna().empty else 'N/A'
         ma10_latest = df['close_ma10'].dropna().iloc[0] if not df['close_ma10'].dropna().empty else 'N/A'
         ma20_latest = df['close_ma20'].dropna().iloc[0] if not df['close_ma20'].dropna().empty else 'N/A'
-        print(f'MA5:  {ma5_latest if isinstance(ma5_latest, str) else ma5_latest:>6.2f} | MA10: {ma10_latest if isinstance(ma10_latest, str) else ma10_latest:>6.2f} | MA20: {ma20_latest if isinstance(ma20_latest, str) else ma20_latest:>6.2f}')
-
+        ma5_str = f"{ma5_latest:>6.2f}" if not isinstance(ma5_latest, str) else ma5_latest
+        ma10_str = f"{ma10_latest:>6.2f}" if not isinstance(ma10_latest, str) else ma10_latest
+        ma20_str = f"{ma20_latest:>6.2f}" if not isinstance(ma20_latest, str) else ma20_latest
+        print(f'MA5:  {ma5_str} | MA10: {ma10_str} | MA20: {ma20_str}')
+    
     # MACD指标 (获取最新的有效值)
     if 'macd' in df.columns and not df['macd'].isna().all():
         # 获取当前（最新）的MACD值，而不是第一个
@@ -81,7 +88,7 @@ def generate_intuitive_report(csv_file):
             print(f'MACD: {macd_latest:>6} | Signal: {signal_latest:>6} | Histogram: {histogram_latest:>6}')
         else:
             print(f'MACD: {macd_latest:>6.3f} | Signal: {signal_latest:>6.3f} | Histogram: {histogram_latest:>6.3f}')
-
+    
     # RSI指标 (获取最新的有效值)
     if 'rsi' in df.columns and not df['rsi'].isna().all():
         rsi_latest = df['rsi'].iloc[0] if not pd.isna(df['rsi'].iloc[0]) else 'N/A'
@@ -89,28 +96,8 @@ def generate_intuitive_report(csv_file):
             print(f'RSI:  {rsi_latest:>6}')
         else:
             print(f'RSI:  {rsi_latest:>6.2f}')
-
     print()
-
-    # 数据质量统计
-    print('🔍 数据质量统计:')
-    print('-' * 40)
-    total_records = len(df)
-    print(f'总记录数: {total_records}')
-
-    if 'close_ma5' in df.columns:
-        ma5_valid = df['close_ma5'].count()
-        print(f'MA5 有效数据: {ma5_valid}/{total_records} ({ma5_valid/total_records*100:.1f}%)')
-
-    if 'rsi' in df.columns:
-        rsi_valid = df['rsi'].count()
-        print(f'RSI 有效数据: {rsi_valid}/{total_records} ({rsi_valid/total_records*100:.1f}%)')
-
-    if 'macd' in df.columns:
-        macd_valid = df['macd'].count()
-        print(f'MACD 有效数据: {macd_valid}/{total_records} ({macd_valid/total_records*100:.1f}%)')
-
-    print()
+    
     # 操盘指导分析
     print('🎯 操盘指导分析:')
     print('-' * 40)
@@ -167,90 +154,55 @@ def generate_intuitive_report(csv_file):
     
     # 计算近期涨跌幅
     recent_close = df['close'].head(5).mean()  # 5日均价
-    price_change_5d = ((current_close - recent_close) / recent_close * 100)
-    print(f'📈 短线: {price_change_5d:+.2f}% (5日均值对比)')
-    
-    # 计算20日涨跌幅
-    if len(df) > 20:
-        recent_20d_close = df['close'].head(20).mean()
-        price_change_20d = ((current_close - recent_20d_close) / recent_20d_close * 100)
-        print(f'📊 中线: {price_change_20d:+.2f}% (20日均值对比)')
-    
-    # 换手率分析（需要流通股本信息，这里用成交量作为近似）
-    if 'vol' in df.columns and 'amount' in df.columns:
-        # 计算换手率近似值
-        current_turnover = (df['vol'].iloc[0] * 100) / df['amount'].iloc[0] * current_close if df['amount'].iloc[0] != 0 else 0
-        avg_turnover = ((df['vol'] * 100) / df['amount'] * df['close']).mean() if df['amount'].mean() != 0 else 0
-        print(f'🔄 换手: {current_turnover:.2f}% (平均: {avg_turnover:.2f}%)')
-    
-    # 量价关系分析
-    if 'vol' in df.columns:
-        current_vol = df['vol'].iloc[0]
-        avg_vol = df['vol'].mean()
-        vol_ratio = current_vol / avg_vol if avg_vol != 0 else 0
-        if vol_ratio > 1.5:
-            print('📈 成交: 放量上涨，关注动能')
-        elif vol_ratio < 0.7:
-            print('📉 成交: 缩量整理，观望为主')
-        else:
-            print('📊 成交: 量能适中，正常波动')
-    
-    # KDJ指标分析
-    if 'kdj_k' in df.columns and not pd.isna(df['kdj_k'].iloc[0]):
-        kdj_k = df['kdj_k'].iloc[0]
-        kdj_d = df['kdj_d'].iloc[0]
-        if kdj_k > 80 and kdj_d > 80:
-            print('🔴 KDJ: 超买区域，注意回调')
-        elif kdj_k < 20 and kdj_d < 20:
-            print('🟢 KDJ: 超卖区域，关注反弹')
-        elif kdj_k > kdj_d:
-            print('🟡 KDJ: 金叉向上，短期看涨')
-        else:
-            print('🔴 KDJ: 死叉向下，短期看空')
-    
-    # 布林带分析
-    if all(col in df.columns for col in ['bb_upper', 'bb_middle', 'bb_lower']):
-        bb_upper = df['bb_upper'].iloc[0]
-        bb_middle = df['bb_middle'].iloc[0]
-        bb_lower = df['bb_lower'].iloc[0]
-        if current_close > bb_upper:
-            print('📈 布林: 突破上轨，强势表现')
-        elif current_close < bb_lower:
-            print('📉 布林: 破位下轨，弱势表现')
-        else:
-            print('📊 布林: 中轨运行，正常波动')
+    price_change = ((current_close - recent_close) / recent_close * 100)
+    print(f'📈 短线: {price_change:+.2f}% (5日均值对比)')
     
     print()
     print('💡 操作建议:')
     print('-' * 40)
-    if price_change_5d > 2:
+    if price_change > 2:
         print('  高位品种，注意回调风险')
-    elif price_change_5d < -2:
+    elif price_change < -2:
         print('  低位品种，关注反弹机会')
     else:
         print('  震荡整理，等待方向选择')
     
     print()
+    print('🔍 数据质量统计:')
+    print('-' * 40)
+    total_records = len(df)
+    print(f'总记录数: {total_records}')
+    
+    if 'close_ma5' in df.columns:
+        ma5_valid = df['close_ma5'].count()
+        print(f'MA5 有效数据: {ma5_valid}/{total_records} ({ma5_valid/total_records*100:.1f}%)')
+    
+    if 'rsi' in df.columns:
+        rsi_valid = df['rsi'].count()
+        print(f'RSI 有效数据: {rsi_valid}/{total_records} ({rsi_valid/total_records*100:.1f}%)')
+    
+    if 'macd' in df.columns:
+        macd_valid = df['macd'].count()
+        print(f'MACD 有效数据: {macd_valid}/{total_records} ({macd_valid/total_records*100:.1f}%)')
+    
+    print()
     print('📁 报告文件:')
     print(f'- CSV: {csv_file}')
-    print(f'- Excel: {csv_file.replace(".csv", ".xlsx")}') 
+    print(f'- Excel: {csv_file.replace(".csv", ".xlsx")}')
     print(f'- JSON: {csv_file.replace(".csv", ".json")}')
 
 
 if __name__ == "__main__":
-    import sys
-    import glob
-    from datetime import datetime
-
-    # 如果提供了参数，当作股票代码处理
+    # 默认分析最新的导出文件
     if len(sys.argv) > 1:
         stock_code = sys.argv[1]
         # 查找对应的最新文件
         today = datetime.now().strftime('%Y%m%d')
         latest_csv = f"exports/{stock_code}_{today}.csv"
-
+        
         # 如果今天的文件不存在，找最近的文件
         if not os.path.exists(latest_csv):
+            import glob
             # 搜索所有该股票的导出文件
             files = glob.glob(f"exports/{stock_code}_*.csv")
             if files:
@@ -265,12 +217,12 @@ if __name__ == "__main__":
                 sys.exit(1)
     else:
         # 默认分析最新的导出文件
-        # 搜索所有导出文件，选择最新的
+        import glob
         all_files = glob.glob("exports/*.csv")
         if all_files:
             latest_csv = sorted(all_files)[-1]
         else:
             print("❌ 未找到任何导出文件")
             sys.exit(1)
-
-    generate_intuitive_report(latest_csv)
+    
+    generate_enhanced_report(latest_csv)

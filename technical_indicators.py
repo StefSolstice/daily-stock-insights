@@ -174,6 +174,7 @@ class TechnicalIndicators:
         df = self.calculate_ma(df, window=5)
         df = self.calculate_ma(df, window=10)
         df = self.calculate_ma(df, window=20)
+        df = self.calculate_ma(df, window=60)  # 年线
         df = self.calculate_macd(df)
         df = self.calculate_rsi(df)
         df = self.calculate_bollinger_bands(df)
@@ -181,6 +182,25 @@ class TechnicalIndicators:
         df = self.calculate_atr(df)
         df = self.calculate_obv(df)
         
+        # 添加成交量均线
+        df = self.calculate_vol_ma(df, window=5)
+        df = self.calculate_vol_ma(df, window=10)
+        df = self.calculate_vol_ma(df, window=20)
+        
+        return df
+    
+    def calculate_vol_ma(self, df: pd.DataFrame, window: int = 5) -> pd.DataFrame:
+        """计算成交量均线
+        
+        Args:
+            df: 包含成交量数据的 DataFrame
+            window: 均线周期
+            
+        Returns:
+            添加了成交量均线的 DataFrame
+        """
+        df = df.copy()
+        df[f'vol_ma{window}'] = df['vol'].rolling(window=window).mean()
         return df
 
 
