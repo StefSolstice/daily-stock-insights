@@ -175,6 +175,15 @@ python main.py --code 000001.SZ --start 20260101 --end 20260228
 python main.py --help
 ```
 
+### 查看分析结果
+
+```bash
+# 生成直观的分析报告
+python generate_report.py
+
+# 默认会分析最新的导出文件，也可以指定特定文件
+```
+
 ## 📁 项目结构
 
 ```
