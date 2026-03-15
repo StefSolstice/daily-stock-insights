@@ -69,7 +69,8 @@ def run_single_analysis(ts_code: str, start_date: str, end_date: str,
         # 初始化模块
         fetcher = StockFetcher()
         ti = TechnicalIndicators()
-        fundamental = FundamentalAnalyzer(ts_code)
+        fundamental = FundamentalAnalyzer()
+        exporter = DataExporter(ts_code)
         
         # 获取数据
         logger.info(f"获取股票数据：{ts_code} ({start_date} - {end_date})")
@@ -89,19 +90,14 @@ def run_single_analysis(ts_code: str, start_date: str, end_date: str,
         df = ti.calculate_macd(df)
         df = ti.calculate_rsi(df)
         
-        # 初始化导出器（在获取数据后）
-        exporter = DataExporter(df, ts_code)
-        
         # 基本面分析
         logger.info("获取基本面数据...")
         try:
-            # 尝试使用 FundamentalAnalyzer 的方法
-            valuation = fundamental.get_valuation_metrics()
-            if valuation:
-                logger.info(f"市盈率 (PE): {valuation.get('pe', 'N/A')}")
-                logger.info(f"市盈率 (TTM): {valuation.get('pe_ttm', 'N/A')}")
-                logger.info(f"市净率 (PB): {valuation.get('pb', 'N/A')}")
-                logger.info(f"股息率：{valuation.get('dv_ratio', 'N/A')}")
+            fundamental_data = fundamental.get_fundamental_data(ts_code)
+            if fundamental_data:
+                logger.info(f"市盈率 (TTM): {fundamental_data.get('pe_ttm', 'N/A')}")
+                logger.info(f"市净率：{fundamental_data.get('pb', 'N/A')}")
+                logger.info(f"股息率：{fundamental_data.get('dividend_rate', 'N/A')}")
         except Exception as e:
             logger.warning(f"获取基本面数据失败：{e}")
         

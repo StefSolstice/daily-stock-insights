@@ -321,3 +321,7 @@ class StockAnalyzer:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
         return summary
+
+
+# 提供一个别名，兼容旧代码
+Analyzer = StockAnalyzer

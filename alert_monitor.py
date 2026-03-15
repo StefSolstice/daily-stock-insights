@@ -233,3 +233,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# 提供一个别名，兼容旧代码
+AlertMonitor = PriceAlert

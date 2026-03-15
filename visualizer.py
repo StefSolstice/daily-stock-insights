@@ -346,3 +346,6 @@ def generate_visualization_report(df: pd.DataFrame, ts_code: str, name: str,
 if __name__ == "__main__":
     print("可视化模块 - 需要安装 matplotlib")
     print("pip install matplotlib")
+
+# 提供一个别名，兼容旧代码
+Visualizer = StockVisualizer
