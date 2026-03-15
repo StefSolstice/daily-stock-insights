@@ -210,18 +210,25 @@ daily-stock-insights/
 
 ## 🔧 配置说明
 
-### TuShare Token（3 种方式，推荐方式 1）
+### TuShare Token 和股票池配置（推荐方式）
 
 **方式 1：`.env` 文件（推荐）**
 
-在项目根目录创建 `.env` 文件，写入你的 token：
+在项目根目录创建 `.env` 文件，写入你的 token 和股票池配置：
 
 ```bash
 # .env
 TUSHARE_TOKEN=your_tushare_token_here
+STOCK_POOL=000001.SZ,600519.SH,000858.SZ,601318.SH
 ```
 
 程序会自动读取该文件，无需手动配置。
+
+**STOCK_POOL 配置说明：**
+- 使用逗号分隔多个股票代码
+- 支持沪深两市股票代码（如：000001.SZ、600519.SH）
+- 如果未配置 STOCK_POOL，将使用默认的股票池
+- 仅在守护模式（--daemon）下生效
 
 **方式 2：环境变量**
 
