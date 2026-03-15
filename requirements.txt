@@ -9,7 +9,7 @@ python-dotenv==1.0.0
 # 数据分析（已有）
 pandas>=2.2.0,<2.3.0
 numpy==1.26.2
-tushare==1.2.9
+tushare>=1.4.25
 
 # 可视化
 matplotlib>=3.9.0
@@ -19,3 +19,9 @@ plotly==5.18.0
 openpyxl==3.1.2
 # tushare依赖
 pyzmq==26.2.0
+
+# 定时任务
+APScheduler==3.10.4
+
+# 日志增强
+colorlog==6.8.0
