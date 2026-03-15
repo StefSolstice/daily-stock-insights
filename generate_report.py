@@ -105,6 +105,39 @@ def generate_intuitive_report(csv_file):
 
 
 if __name__ == "__main__":
-    # 默认分析最新的导出文件
-    latest_csv = "exports/000001.SZ_20260315.csv"
+    import sys
+    import glob
+    from datetime import datetime
+    
+    # 如果提供了参数，当作股票代码处理
+    if len(sys.argv) > 1:
+        stock_code = sys.argv[1]
+        # 查找对应的最新文件
+        today = datetime.now().strftime('%Y%m%d')
+        latest_csv = f"exports/{stock_code}_{today}.csv"
+        
+        # 如果今天的文件不存在，找最近的文件
+        if not os.path.exists(latest_csv):
+            # 搜索所有该股票的导出文件
+            files = glob.glob(f"exports/{stock_code}_*.csv")
+            if files:
+                # 按文件名排序，选择最新的
+                latest_csv = sorted(files)[-1]
+            else:
+                print(f"❌ 未找到股票 {stock_code} 的导出文件")
+                print("可用的导出文件:")
+                all_files = glob.glob("exports/*.csv")
+                for f in sorted(all_files)[-10:]:  # 显示最近10个文件
+                    print(f"  - {os.path.basename(f)}")
+                sys.exit(1)
+    else:
+        # 默认分析最新的导出文件
+        # 搜索所有导出文件，选择最新的
+        all_files = glob.glob("exports/*.csv")
+        if all_files:
+            latest_csv = sorted(all_files)[-1]
+        else:
+            print("❌ 未找到任何导出文件")
+            sys.exit(1)
+    
     generate_intuitive_report(latest_csv)
