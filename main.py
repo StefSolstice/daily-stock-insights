@@ -81,6 +81,9 @@ def run_single_analysis(ts_code: str, start_date: str, end_date: str,
         
         logger.info(f"获取到 {len(df)} 条数据")
         
+        # 确保数据按日期升序排列（技术指标计算需要时间序列顺序）
+        df = df.sort_values('trade_date', ascending=True).reset_index(drop=True)
+        
         # 计算技术指标
         logger.info("计算技术指标...")
         df = ti.calculate_ma(df, window=5)
@@ -88,6 +91,9 @@ def run_single_analysis(ts_code: str, start_date: str, end_date: str,
         df = ti.calculate_ma(df, window=20)
         df = ti.calculate_macd(df)
         df = ti.calculate_rsi(df)
+        
+        # 将数据按日期降序排列（最新的在前，便于查看）
+        df = df.sort_values('trade_date', ascending=False).reset_index(drop=True)
         
         # 初始化导出器（在获取数据后）
         exporter = DataExporter(df, ts_code)
