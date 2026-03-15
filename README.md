@@ -37,17 +37,54 @@
 ### 安装依赖
 
 ```bash
-pip install tushare pandas numpy matplotlib openpyxl
+pip install -r requirements.txt
 ```
 
-### 配置 TuShare
+### 配置 TuShare Token
+
+1. **获取 Token**: 访问 https://tushare.pro 注册并获取免费 token
+2. **配置 Token**: 在项目根目录创建 `.env` 文件，写入：
+
+```bash
+# .env
+TUSHARE_TOKEN=your_tushare_token_here
+```
+
+### 命令行使用（推荐）
+
+项目支持命令行方式直接分析股票：
+
+```bash
+# 分析单个股票（平安银行）
+python main.py --code 000001.SZ
+
+# 指定日期范围分析
+python main.py --code 000001.SZ --start 20260101 --end 20260315
+
+# 分析并导出到指定目录
+python main.py --code 000001.SZ --export ./my_exports
+
+# 启动守护模式（定时任务）
+python main.py --daemon
+```
+
+### Python 代码使用
 
 ```python
-import tushare as ts
+from analyzer import StockAnalyzer
 
-# 替换为你的 token
-ts.set_token('your_tushare_token_here')
-pro = ts.pro_api()
+# 创建分析器
+analyzer = StockAnalyzer('000001.SZ', pro)
+
+# 获取历史数据
+df = analyzer.get_history(days=100)
+
+# 计算技术指标
+df_with_indicators = analyzer.calculate_all_indicators(df)
+
+# 生成分析报告
+report = analyzer.generate_report(df)
+print(report)
 ```
 
 ### 基本使用
@@ -79,7 +116,7 @@ fund = FundamentalAnalyzer('000001.SZ', pro)
 
 # 获取估值指标
 valuation = fund.get_valuation_metrics()
-print(f"PE: {valuation['pe_ttm']}, PB: {valuation['pb']}")
+print(f"PE: {valuation.get('pe_ttm', 'N/A')}, PB: {valuation.get('pb', 'N/A')}")
 
 # 生成基本面报告
 report = fund.generate_fundamental_report()
@@ -120,6 +157,22 @@ exporter.export_all()
 exporter.to_csv()
 exporter.to_excel()
 exporter.to_json()
+```
+
+### 实际运行示例
+
+```bash
+# 分析平安银行（000001.SZ）
+python main.py --code 000001.SZ
+
+# 分析贵州茅台（600519.SH）并导出到指定目录
+python main.py --code 600519.SH --export ./my_analysis
+
+# 分析指定时间段
+python main.py --code 000001.SZ --start 20260101 --end 20260228
+
+# 查看帮助信息
+python main.py --help
 ```
 
 ## 📁 项目结构
