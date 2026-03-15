@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+生成直观的股票分析报告
+"""
+
+import pandas as pd
+import os
+
+def generate_intuitive_report(csv_file):
+    """生成直观的股票分析报告"""
+    
+    if not os.path.exists(csv_file):
+        print(f"❌ 文件不存在: {csv_file}")
+        return
+    
+    # 读取CSV文件
+    df = pd.read_csv(csv_file)
+    
+    # 获取股票代码和名称
+    ts_code = df['ts_code'].iloc[0] if 'ts_code' in df.columns else 'Unknown'
+    
+    print('📊 股票数据分析报告')
+    print('=' * 60)
+    print(f'股票代码: {ts_code}')
+    print(f'数据条目数: {len(df)}')
+    print(f'日期范围: {df["trade_date"].iloc[-1]} 到 {df["trade_date"].iloc[0]}')
+    print()
+    
+    # 显示最近5个交易日的详细数据
+    print('📈 最近5个交易日详情:')
+    print('-' * 80)
+    columns_needed = ['trade_date', 'open', 'high', 'low', 'close', 'vol', 'amount']
+    available_columns = [col for col in columns_needed if col in df.columns]
+    recent_data = df.head(5)[available_columns]
+    for idx, row in recent_data.iterrows():
+        print(f"📅 {row['trade_date']} | "
+              f"开盘:{row['open']:>6.2f} | "
+              f"最高:{row['high']:>6.2f} | "
+              f"最低:{row['low']:>6.2f} | "
+              f"收盘:{row['close']:>6.2f} | "
+              f"成交量:{int(row['vol']/1000):>4}K | "
+              f"成交额:{int(row['amount']/10000):>4}万")
+    print()
+    
+    # 价格统计
+    print('💰 价格统计分析:')
+    print('-' * 40)
+    print(f'最高价: {df["high"].max():>6.2f}')
+    print(f'最低价: {df["low"].min():>6.2f}')
+    print(f'当前价: {df["close"].iloc[0]:>6.2f}')
+    print(f'平均价: {df["close"].mean():>6.2f}')
+    print(f'价格区间: {df["close"].min():.2f} ~ {df["close"].max():.2f}')
+    print()
+    
+    # 技术指标分析
+    print('📊 技术指标分析:')
+    print('-' * 40)
+    
+    # MA指标 (寻找最近的有效值，而不仅仅是第一行)
+    if 'close_ma5' in df.columns and not df['close_ma5'].isna().all():
+        # 找到最近的有效MA值
+        ma5_latest = df['close_ma5'].dropna().iloc[0] if not df['close_ma5'].dropna().empty else 'N/A'
+        ma10_latest = df['close_ma10'].dropna().iloc[0] if not df['close_ma10'].dropna().empty else 'N/A'
+        ma20_latest = df['close_ma20'].dropna().iloc[0] if not df['close_ma20'].dropna().empty else 'N/A'
+        print(f'MA5:  {ma5_latest if isinstance(ma5_latest, str) else ma5_latest:>6.2f} | MA10: {ma10_latest if isinstance(ma10_latest, str) else ma10_latest:>6.2f} | MA20: {ma20_latest if isinstance(ma20_latest, str) else ma20_latest:>6.2f}')
+    
+    # MACD指标
+    if 'macd' in df.columns and not df['macd'].isna().all():
+        macd_latest = df['macd'].iloc[0] if not pd.isna(df['macd'].iloc[0]) else 0
+        signal_latest = df['signal'].iloc[0] if not pd.isna(df['signal'].iloc[0]) else 0
+        histogram_latest = df['histogram'].iloc[0] if not pd.isna(df['histogram'].iloc[0]) else 0
+        print(f'MACD: {macd_latest:>6.3f} | Signal: {signal_latest:>6.3f} | Histogram: {histogram_latest:>6.3f}')
+    
+    # RSI指标
+    if 'rsi' in df.columns and not df['rsi'].isna().all():
+        rsi_latest = df['rsi'].iloc[0] if not pd.isna(df['rsi'].iloc[0]) else 'N/A'
+        print(f'RSI:  {rsi_latest:>6}')
+    
+    print()
+    
+    # 数据质量统计
+    print('🔍 数据质量统计:')
+    print('-' * 40)
+    total_records = len(df)
+    print(f'总记录数: {total_records}')
+    
+    if 'close_ma5' in df.columns:
+        ma5_valid = df['close_ma5'].count()
+        print(f'MA5 有效数据: {ma5_valid}/{total_records} ({ma5_valid/total_records*100:.1f}%)')
+    
+    if 'rsi' in df.columns:
+        rsi_valid = df['rsi'].count()
+        print(f'RSI 有效数据: {rsi_valid}/{total_records} ({rsi_valid/total_records*100:.1f}%)')
+    
+    if 'macd' in df.columns:
+        macd_valid = df['macd'].count()
+        print(f'MACD 有效数据: {macd_valid}/{total_records} ({macd_valid/total_records*100:.1f}%)')
+    
+    print()
+    print('📁 报告文件:')
+    print(f'- CSV: {csv_file}')
+    print(f'- Excel: {csv_file.replace(".csv", ".xlsx")}')
+    print(f'- JSON: {csv_file.replace(".csv", ".json")}')
+
+
+if __name__ == "__main__":
+    # 默认分析最新的导出文件
+    latest_csv = "exports/000001.SZ_20260315.csv"
+    generate_intuitive_report(latest_csv)
