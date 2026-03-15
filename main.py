@@ -81,6 +81,11 @@ def run_single_analysis(ts_code: str, start_date: str, end_date: str,
         
         logger.info(f"获取到 {len(df)} 条数据")
         
+        # 处理成交量数据，确保为整数（成交量单位为手，应为整数）
+        if 'vol' in df.columns:
+            # TuShare API返回的vol有时会有小数，但成交量应为整数
+            df['vol'] = df['vol'].round().astype(int)  # 四舍五入取整
+        
         # 确保数据按日期升序排列（技术指标计算需要时间序列顺序）
         df = df.sort_values('trade_date', ascending=True).reset_index(drop=True)
         

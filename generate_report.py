@@ -39,7 +39,9 @@ def generate_intuitive_report(csv_file):
         vol_str = f"{row['vol']:,.2f}"  # 保持原始单位显示
         # TuShare API的amount字段数值是千元为单位，显示为万元需要除以10
         amount_wan = row['amount'] / 10  # 千元/10 = 万元
-        print(f"📅 {row['trade_date']} | "
+        # 修复日期浮点数显示
+        trade_date = int(row['trade_date']) if not pd.isna(row['trade_date']) else row['trade_date']
+        print(f"📅 {trade_date} | "
               f"开盘:{row['open']:>7.2f} | "
               f"最高:{row['high']:>7.2f} | "
               f"最低:{row['low']:>7.2f} | "

@@ -10,6 +10,13 @@ import pandas as pd
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 
+# 确保加载 .env 文件
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # 如果没有 python-dotenv，忽略
+
 
 class StockFetcher:
     """股票数据获取器"""
@@ -84,6 +91,10 @@ class StockFetcher:
             for col in numeric_cols:
                 if col in df.columns:
                     df[col] = pd.to_numeric(df[col], errors='coerce')
+            
+            # 确保成交量为整数（成交量单位为手，应为整数）
+            if 'vol' in df.columns:
+                df['vol'] = df['vol'].round(2)  # 保留2位小数，如果API确实返回小数
             
             # 按日期降序排列（最新日期在前）
             df = df.sort_values('trade_date', ascending=False).reset_index(drop=True)
