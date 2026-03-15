@@ -25,6 +25,7 @@ def generate_intuitive_report(csv_file):
     print(f'股票代码: {ts_code}')
     print(f'数据条目数: {len(df)}')
     print(f'日期范围: {df["trade_date"].iloc[-1]} 到 {df["trade_date"].iloc[0]}')
+    print('📊 数据说明: 成交量单位为"手"(1手=100股)，成交额单位为"千元"')
     print()
     
     # 显示最近5个交易日的详细数据
@@ -34,23 +35,27 @@ def generate_intuitive_report(csv_file):
     available_columns = [col for col in columns_needed if col in df.columns]
     recent_data = df.head(5)[available_columns]
     for idx, row in recent_data.iterrows():
+        # 注意：TuShare的vol单位是"手"(1手=100股)，amount单位是"千元"
+        vol_str = f"{row['vol']:,.2f}"  # 保持原始单位显示
+        # amount是元，显示为万元
+        amount_wan = row['amount'] / 10000  # 元/10000 = 万元
         print(f"📅 {row['trade_date']} | "
-              f"开盘:{row['open']:>6.2f} | "
-              f"最高:{row['high']:>6.2f} | "
-              f"最低:{row['low']:>6.2f} | "
-              f"收盘:{row['close']:>6.2f} | "
-              f"成交量:{int(row['vol']/1000):>4}K | "
-              f"成交额:{int(row['amount']/10000):>4}万")
+              f"开盘:{row['open']:>7.2f} | "
+              f"最高:{row['high']:>7.2f} | "
+              f"最低:{row['low']:>7.2f} | "
+              f"收盘:{row['close']:>7.2f} | "
+              f"成交量:{vol_str:>9}手 | "
+              f"成交额:{amount_wan:>7.1f}万")
     print()
     
     # 价格统计
     print('💰 价格统计分析:')
     print('-' * 40)
-    print(f'最高价: {df["high"].max():>6.2f}')
-    print(f'最低价: {df["low"].min():>6.2f}')
-    print(f'当前价: {df["close"].iloc[0]:>6.2f}')
-    print(f'平均价: {df["close"].mean():>6.2f}')
-    print(f'价格区间: {df["close"].min():.2f} ~ {df["close"].max():.2f}')
+    print(f'最高价(日内): {df["high"].max():>7.2f}')
+    print(f'最低价(日内): {df["low"].min():>7.2f}')
+    print(f'当前收盘价: {df["close"].iloc[0]:>7.2f}')
+    print(f'平均收盘价: {df["close"].mean():>7.2f}')
+    print(f'收盘价区间: {df["close"].min():.2f} ~ {df["close"].max():.2f}')
     print()
     
     # 技术指标分析
@@ -65,17 +70,24 @@ def generate_intuitive_report(csv_file):
         ma20_latest = df['close_ma20'].dropna().iloc[0] if not df['close_ma20'].dropna().empty else 'N/A'
         print(f'MA5:  {ma5_latest if isinstance(ma5_latest, str) else ma5_latest:>6.2f} | MA10: {ma10_latest if isinstance(ma10_latest, str) else ma10_latest:>6.2f} | MA20: {ma20_latest if isinstance(ma20_latest, str) else ma20_latest:>6.2f}')
     
-    # MACD指标
+    # MACD指标 (获取最新的有效值)
     if 'macd' in df.columns and not df['macd'].isna().all():
-        macd_latest = df['macd'].iloc[0] if not pd.isna(df['macd'].iloc[0]) else 0
-        signal_latest = df['signal'].iloc[0] if not pd.isna(df['signal'].iloc[0]) else 0
-        histogram_latest = df['histogram'].iloc[0] if not pd.isna(df['histogram'].iloc[0]) else 0
-        print(f'MACD: {macd_latest:>6.3f} | Signal: {signal_latest:>6.3f} | Histogram: {histogram_latest:>6.3f}')
+        # 获取当前（最新）的MACD值，而不是第一个
+        macd_latest = df['macd'].iloc[0] if not pd.isna(df['macd'].iloc[0]) else 'N/A'
+        signal_latest = df['signal'].iloc[0] if not pd.isna(df['signal'].iloc[0]) else 'N/A'
+        histogram_latest = df['histogram'].iloc[0] if not pd.isna(df['histogram'].iloc[0]) else 'N/A'
+        if isinstance(macd_latest, str):
+            print(f'MACD: {macd_latest:>6} | Signal: {signal_latest:>6} | Histogram: {histogram_latest:>6}')
+        else:
+            print(f'MACD: {macd_latest:>6.3f} | Signal: {signal_latest:>6.3f} | Histogram: {histogram_latest:>6.3f}')
     
-    # RSI指标
+    # RSI指标 (获取最新的有效值)
     if 'rsi' in df.columns and not df['rsi'].isna().all():
         rsi_latest = df['rsi'].iloc[0] if not pd.isna(df['rsi'].iloc[0]) else 'N/A'
-        print(f'RSI:  {rsi_latest:>6}')
+        if isinstance(rsi_latest, str):
+            print(f'RSI:  {rsi_latest:>6}')
+        else:
+            print(f'RSI:  {rsi_latest:>6.2f}')
     
     print()
     
