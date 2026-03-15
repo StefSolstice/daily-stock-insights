@@ -25,7 +25,7 @@ def generate_intuitive_report(csv_file):
     print(f'股票代码: {ts_code}')
     print(f'数据条目数: {len(df)}')
     print(f'日期范围: {df["trade_date"].iloc[-1]} 到 {df["trade_date"].iloc[0]}')
-    print('📊 数据说明: vol(成交量)单位为"手", amount(成交额)单位为"千元"(显示为万元需除以10)')
+    print('📊 数据说明: vol(成交量)单位为"手", amount(成交额)单位为"元"(实际为千元数值，显示为万元需除以10)')
     print()
     
     # 显示最近5个交易日的详细数据
