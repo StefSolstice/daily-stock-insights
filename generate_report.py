@@ -25,7 +25,7 @@ def generate_intuitive_report(csv_file):
     print(f'股票代码: {ts_code}')
     print(f'数据条目数: {len(df)}')
     print(f'日期范围: {df["trade_date"].iloc[-1]} 到 {df["trade_date"].iloc[0]}')
-    print('📊 数据说明: vol(成交量)单位为"手"(1手=100股), amount(成交额)单位为"元"(1万元=10000元)')
+    print('📊 数据说明: vol(成交量)单位为"手", amount(成交额)单位为"千元"(显示为万元需除以10)')
     print()
     
     # 显示最近5个交易日的详细数据
@@ -37,8 +37,8 @@ def generate_intuitive_report(csv_file):
     for idx, row in recent_data.iterrows():
         # 注意：TuShare的vol单位是"手"(1手=100股)，amount单位是"千元"
         vol_str = f"{row['vol']:,.2f}"  # 保持原始单位显示
-        # amount是元，显示为万元
-        amount_wan = row['amount'] / 10000  # 元/10000 = 万元
+        # TuShare API的amount字段数值是千元为单位，显示为万元需要除以10
+        amount_wan = row['amount'] / 10  # 千元/10 = 万元
         print(f"📅 {row['trade_date']} | "
               f"开盘:{row['open']:>7.2f} | "
               f"最高:{row['high']:>7.2f} | "
