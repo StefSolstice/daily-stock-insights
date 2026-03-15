@@ -70,7 +70,13 @@ class ConfigLoader:
                         elif value.startswith("'") and value.endswith("'"):
                             value = value[1:-1]
                         
-                        self.config[key] = value
+                        # 如果是股票池配置，需要特殊处理
+                        if key == 'STOCK_POOL':
+                            # 支持逗号分隔的股票代码列表
+                            stock_list = [stock.strip() for stock in value.split(',')]
+                            self.config[key] = stock_list
+                        else:
+                            self.config[key] = value
         except Exception as e:
             print(f"[DEBUG] 读取 .env 文件失败：{e}")
     

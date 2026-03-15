@@ -128,13 +128,20 @@ def run_daily_analysis(config: dict):
     """执行每日自动分析（预设股票池）"""
     logger.info("开始每日自动分析...")
     
-    # 默认股票池（可自行扩展）
-    stock_pool = [
+    # 从配置中读取股票池，如果没有配置则使用默认股票池
+    default_stock_pool = [
         '000001.SZ',  # 平安银行
         '600519.SH',  # 贵州茅台
         '000858.SZ',  # 五粮液
         '601318.SH',  # 中国平安
     ]
+    
+    # 优先从配置中读取股票池
+    stock_pool = config.get('STOCK_POOL', default_stock_pool)
+    
+    # 如果配置中的股票池为空，使用默认股票池
+    if not stock_pool or len(stock_pool) == 0:
+        stock_pool = default_stock_pool
     
     # 计算日期（最近一个交易日）
     end_date = datetime.now().strftime('%Y%m%d')
