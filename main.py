@@ -100,6 +100,10 @@ def run_single_analysis(ts_code: str, start_date: str, end_date: str,
         # 将数据按日期降序排列（最新的在前，便于查看）
         df = df.sort_values('trade_date', ascending=False).reset_index(drop=True)
         
+        # 确保成交量为整数（在所有处理完成后）
+        if 'vol' in df.columns:
+            df['vol'] = df['vol'].round().astype(int)
+        
         # 初始化导出器（在获取数据后）
         exporter = DataExporter(df, ts_code)
         
