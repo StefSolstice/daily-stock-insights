@@ -38,6 +38,9 @@ from scheduler import TaskScheduler
 from config_loader import ConfigLoader
 from stock_fetcher import StockFetcher
 from technical_indicators import TechnicalIndicators
+from advanced_indicators import AdvancedIndicators
+from stock_selection import StockSelectionStrategy
+from notification_service import NotificationService
 from fundamental_analyzer import FundamentalAnalyzer
 from analyzer import Analyzer
 from exporter import DataExporter
@@ -69,6 +72,7 @@ def run_single_analysis(ts_code: str, start_date: str, end_date: str,
         # 初始化模块
         fetcher = StockFetcher()
         ti = TechnicalIndicators()
+        ai = AdvancedIndicators()  # 新增高级指标模块
         fundamental = FundamentalAnalyzer(ts_code)
         
         # 获取数据
@@ -89,8 +93,8 @@ def run_single_analysis(ts_code: str, start_date: str, end_date: str,
         # 确保数据按日期升序排列（技术指标计算需要时间序列顺序）
         df = df.sort_values('trade_date', ascending=True).reset_index(drop=True)
         
-        # 计算技术指标
-        logger.info("计算技术指标...")
+        # 计算基础技术指标
+        logger.info("计算基础技术指标...")
         df = ti.calculate_ma(df, window=5)
         df = ti.calculate_ma(df, window=10)
         df = ti.calculate_ma(df, window=20)
@@ -104,12 +108,21 @@ def run_single_analysis(ts_code: str, start_date: str, end_date: str,
         df = ti.calculate_vol_ma(df, window=10)
         df = ti.calculate_vol_ma(df, window=20)
         
+        # 计算高级选股指标
+        logger.info("计算高级选股指标...")
+        df = ai.calculate_all_advanced_indicators(df)
+        
         # 将数据按日期降序排列（最新的在前，便于查看）
         df = df.sort_values('trade_date', ascending=False).reset_index(drop=True)
         
         # 确保成交量为整数（在所有处理完成后）
         if 'vol' in df.columns:
             df['vol'] = df['vol'].round().astype(int)
+        
+        # 生成选股信号
+        logger.info("生成选股信号...")
+        selection_signals = ai.generate_stock_selection_signals(df)
+        logger.info(f"选股信号: {selection_signals['signals']}")
         
         # 初始化导出器（在获取数据后）
         exporter = DataExporter(df, ts_code)
@@ -179,6 +192,59 @@ def run_daily_analysis(config: dict):
     logger.info(f"每日分析完成：成功 {success_count}/{len(stock_pool)}")
 
 
+def run_stock_selection(config: dict, limit: int = 20):
+    """执行股票筛选
+    
+    Args:
+        config: 配置字典
+        limit: 扫描股票数量限制
+    """
+    logger.info(f"开始股票筛选，限制数量：{limit}")
+    
+    try:
+        # 获取Token
+        token = config.get('TUSHARE_TOKEN')
+        if not token:
+            logger.error("错误: 未配置TUSHARE_TOKEN")
+            return False
+        
+        # 创建选股策略实例
+        selector = StockSelectionStrategy(token)
+        
+        # 执行扫描
+        results = selector.scan_all_stocks(limit=limit)
+        
+        # 生成报告
+        report = selector.generate_selection_report(results)
+        
+        # 保存报告
+        output_dir = Path('./data/selection')
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        report_file = output_dir / f"stock_selection_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        with open(report_file, 'w', encoding='utf-8') as f:
+            f.write(report)
+        
+        logger.info(f"选股报告已保存至: {report_file}")
+        logger.info(f"找到 {len(results)} 只符合条件的股票")
+        
+        # 推送通知
+        if results:
+            logger.info("发现推荐股票，准备推送...")
+            notifier = NotificationService(config)
+            push_results = notifier.send_stock_selection_notification(results)
+            
+            successful_pushes = sum(push_results.values())
+            total_pushes = len(push_results)
+            logger.info(f"推送结果: {successful_pushes}/{total_pushes} 个渠道成功")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"股票筛选失败：{e}", exc_info=True)
+        return False
+
+
 def setup_scheduler(config: dict) -> TaskScheduler:
     """配置并启动调度器
     
@@ -217,6 +283,7 @@ def main():
   %(prog)s --code 600519.SH --start 20260101   # 分析贵州茅台（从 2026 年初开始）
   %(prog)s --daemon                            # 启动守护模式（定时任务）
   %(prog)s --code 000001.SZ --export ./output  # 分析并导出到指定目录
+  %(prog)s --select --limit 50                 # 执行股票筛选（扫描前50只股票）
         '''
     )
     
@@ -225,6 +292,8 @@ def main():
     parser.add_argument('--end', type=str, help='结束日期 (YYYYMMDD)，默认今天')
     parser.add_argument('--export', type=str, default='./exports', help='导出目录')
     parser.add_argument('--daemon', action='store_true', help='启动守护模式（定时任务）')
+    parser.add_argument('--select', action='store_true', help='执行股票筛选')
+    parser.add_argument('--limit', type=int, default=20, help='股票筛选数量限制（默认20）')
     parser.add_argument('--log-level', type=str, default='INFO', 
                        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
                        help='日志级别')
@@ -272,6 +341,17 @@ def main():
         except Exception as e:
             logger.error(f"守护模式异常：{e}")
             scheduler.shutdown()
+            sys.exit(1)
+    
+    # 股票筛选模式
+    elif args.select:
+        success = run_stock_selection(config, limit=args.limit)
+        
+        if success:
+            logger.info("股票筛选完成")
+            sys.exit(0)
+        else:
+            logger.error("股票筛选失败")
             sys.exit(1)
     
     # 单次分析模式

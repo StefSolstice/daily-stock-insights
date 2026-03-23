@@ -1,306 +1,149 @@
-# Daily Stock Insights - 每日股票洞察
+# Daily Stock Insights
 
-📊 基于 TuShare API 的股票数据分析工具，提供技术指标、基本面分析、可视化和数据导出功能。
+基于 TuShare 的股票数据分析工具，提供全面的技术指标分析、基本面分析和选股策略。
 
-## ✨ 功能特性
+## 功能特性
 
-### 📈 技术指标分析
-- **均线系统**: MA5, MA10, MA20, MA60
-- **趋势指标**: MACD, DMI, CCI
-- **动量指标**: RSI, KDJ, BOLL
-- **成交量分析**: 量价关系、均量线
+### 1. 数据层面增强
+- ✅ **数据量扩展**：从原来的37条扩展到250+条（默认一年数据约250个交易日）
+- ✅ **丰富数据字段**：新增换手率、量比、振幅等关键指标
 
-### 🏢 基本面分析 (NEW!)
-- **估值指标**: PE, PB, PS, 股息率
-- **盈利能力**: ROE, ROA, 毛利率
-- **成长能力**: 营收增速，利润增速
-- **估值水平评估**: 低/合理/高估判断
+### 2. 选股工具维度
+- ✅ **量价关系分析**：放量上涨 vs 缩量上涨判断
+- ✅ **换手率指标**：判断筹码活跃度
+- ✅ **多维度涨跌幅**：当日、近5日、近20日、近60日涨跌幅
+- ✅ **资金流向分析**：主力净流入/流出、资金流指数(MFI)
+- ✅ **行业排名预留**：通过基本面数据获取行业信息
 
-### 📊 数据可视化 (NEW!)
-- **K 线图**: 红阳绿阴，带成交量
-- **指标图**: 多指标组合展示
-- **价格分布**: 直方图分析
-- **成交量分析**: 量价关系图
+### 3. 个股研判维度
+- ✅ **关键价位识别**：支撑位/压力位计算
+- ✅ **布林带指标**：判断波动率和价格位置
+- ✅ **KDJ指标**：短线超买超卖比RSI更灵敏
+- ✅ **成交量均线**：量能趋势分析
+- ✅ **财务数据**：PE、PB、市值等基本面指标
 
-### 💾 数据导出 (NEW!)
-- **CSV**: 通用格式，支持 Excel 打开
-- **Excel**: 自动调整列宽
-- **JSON**: 结构化数据，带元数据
+### 4. 推送机制
+- ✅ **Telegram推送**：支持Markdown格式的消息推送
+- ✅ **企业微信推送**：支持企业微信机器人推送
+- ✅ **智能推送条件**：满足多重技术指标后自动推送
 
-### 🔔 价格提醒
-- 支持设置价格阈值
-- 实时监控触发条件
-- 灵活的提醒策略
-
-## 🚀 快速开始
-
-### 安装依赖
+## 安装依赖
 
 ```bash
-pip install -r requirements.txt
+pip install tushare pandas numpy requests python-dotenv
 ```
 
-### 配置 TuShare Token
+## 配置
 
-1. **获取 Token**: 访问 https://tushare.pro 注册并获取免费 token
-2. **配置 Token**: 在项目根目录创建 `.env` 文件，写入：
+### 1. TuShare Token
+获取免费的 TuShare Token：https://tushare.pro/
 
-```bash
-# .env
+### 2. 环境变量配置
+创建 `.env` 文件：
+```env
 TUSHARE_TOKEN=your_tushare_token_here
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+TELEGRAM_CHAT_ID=your_telegram_chat_id
+WECHAT_WEBHOOK=your_wechat_webhook_url
 ```
 
-### 命令行使用（推荐）
+### 3. 选股策略配置
+在配置文件中可以设置：
+- 股票池（自选股）
+- 扫描范围（全市场或特定板块）
+- 推送条件
 
-项目支持命令行方式直接分析股票：
+## 使用方法
 
+### 1. 单只股票分析
 ```bash
-# 分析单个股票（平安银行）
 python main.py --code 000001.SZ
+```
 
-# 指定日期范围分析
-python main.py --code 000001.SZ --start 20260101 --end 20260315
+### 2. 自定义时间段分析
+```bash
+python main.py --code 600519.SH --start 20250101 --end 20251231
+```
 
-# 分析并导出到指定目录
-python main.py --code 000001.SZ --export ./my_exports
+### 3. 股票筛选（全市场扫描）
+```bash
+python main.py --select --limit 50  # 扫描前50只股票
+```
 
-# 启动守护模式（定时任务）
+### 4. 守护模式（定时任务）
+```bash
 python main.py --daemon
 ```
 
-### Python 代码使用
+## 选股策略说明
 
-```python
-from analyzer import StockAnalyzer
+### 技术面筛选条件
+- MA5上穿MA10
+- 成交量放大1.5倍以上
+- RSI在30-70合理区间
+- MACD金叉
+- 股价在布林带中轨上方
+- 换手率在1%-10%合理区间
 
-# 创建分析器
-analyzer = StockAnalyzer('000001.SZ', pro)
+### 基本面筛选条件
+- PE在0-50合理区间
+- PB在0-5合理区间
+- 有分红记录
 
-# 获取历史数据
-df = analyzer.get_history(days=100)
+### 资金面筛选条件
+- 主力资金净流入
+- MFI在20-80合理区间
+- 量价配合良好
 
-# 计算技术指标
-df_with_indicators = analyzer.calculate_all_indicators(df)
-
-# 生成分析报告
-report = analyzer.generate_report(df)
-print(report)
-```
-
-### 基本使用
-
-```python
-from analyzer import StockAnalyzer
-
-# 创建分析器
-analyzer = StockAnalyzer('000001.SZ', pro)
-
-# 获取历史数据
-df = analyzer.get_history(days=100)
-
-# 计算技术指标
-df_with_indicators = analyzer.calculate_all_indicators(df)
-
-# 生成分析报告
-report = analyzer.generate_report(df)
-print(report)
-```
-
-### 基本面分析
-
-```python
-from fundamental_analyzer import FundamentalAnalyzer
-
-# 创建基本面分析器
-fund = FundamentalAnalyzer('000001.SZ', pro)
-
-# 获取估值指标
-valuation = fund.get_valuation_metrics()
-print(f"PE: {valuation.get('pe_ttm', 'N/A')}, PB: {valuation.get('pb', 'N/A')}")
-
-# 生成基本面报告
-report = fund.generate_fundamental_report()
-print(report)
-```
-
-### 数据可视化
-
-```python
-from visualizer import StockVisualizer
-
-# 创建可视化器
-viz = StockVisualizer(df, '000001.SZ', '平安银行')
-
-# 绘制 K 线图
-viz.plot_kline(save_path='./charts/kline.png', show=False)
-
-# 绘制带指标的 K 线图
-viz.plot_with_indicators(
-    indicators=['MA5', 'MA10', 'MA20', 'VOL', 'MACD'],
-    save_path='./charts/indicators.png',
-    show=False
-)
-```
-
-### 数据导出
-
-```python
-from exporter import DataExporter
-
-# 创建导出器
-exporter = DataExporter(df, '000001.SZ', '平安银行')
-
-# 导出所有格式
-exporter.export_all()
-
-# 单独导出
-exporter.to_csv()
-exporter.to_excel()
-exporter.to_json()
-```
-
-### 实际运行示例
-
-```bash
-# 分析平安银行（000001.SZ）
-python main.py --code 000001.SZ
-
-# 分析贵州茅台（600519.SH）并导出到指定目录
-python main.py --code 600519.SH --export ./my_analysis
-
-# 分析指定时间段
-python main.py --code 000001.SZ --start 20260101 --end 20260228
-
-# 查看帮助信息
-python main.py --help
-```
-
-### 查看分析结果
-
-```bash
-# 生成直观的分析报告（默认最新文件）
-python generate_report.py
-
-# 查看特定股票的报告
-python generate_report.py 000001.SZ
-python generate_report.py 600519.SH
-```
-
-### 数据准确性说明
-
-本工具使用真实的 TuShare API 获取数据，确保数据准确性：
-
-- **成交量**：单位为"手"（1手=100股），已处理为整数显示
-- **成交额**：单位为"元"（API返回值为千元数值，显示为万元需除以10）
-- **日期**：已修正为整数格式显示
-- **技术指标**：MACD、RSI、MA等指标计算准确
-- **数据误差**：所有计算误差控制在1%以内
-
-### 操盘指导功能
-
-报告包含智能操盘指导分析：
-
-- **技术指标解读**：MACD、RSI、均线系统分析
-- **量价关系分析**：成交量与价格的配合关系
-- **趋势判断**：短期、中期趋势判断
-- **操作建议**：基于技术指标的具体操作建议
-
-## 📁 项目结构
+## 文件结构
 
 ```
-daily-stock-insights/
-├── README.md                 # 项目文档
-├── requirements.txt          # 依赖列表
-├── stock_fetcher.py          # 数据获取模块
-├── analyzer.py               # 技术分析模块
-├── technical_indicators.py   # 技术指标计算
-├── alert_monitor.py          # 价格提醒监控
-├── fundamental_analyzer.py   # 基本面分析 (NEW!)
-├── visualizer.py             # 数据可视化 (NEW!)
-├── exporter.py               # 数据导出 (NEW!)
-├── main.py                   # 主程序入口
-├── charts/                   # 图表输出目录
-└── exports/                  # 数据导出目录
+projects/daily-stock-insights/
+├── main.py                 # 主程序入口
+├── config_loader.py        # 配置加载器
+├── stock_fetcher.py        # 股票数据获取器
+├── technical_indicators.py # 基础技术指标
+├── advanced_indicators.py  # 高级技术指标
+├── stock_selection.py      # 选股策略
+├── notification_service.py # 推送通知服务
+├── fundamental_analyzer.py # 基本面分析
+├── analyzer.py            # 综合分析器
+├── exporter.py            # 数据导出器
+├── visualizer.py          # 数据可视化
+└── alert_monitor.py       # 预警监控器
 ```
 
-## 📋 更新日志
+## 定时任务
 
-### 2026-03-10
-- ✨ 新增基本面分析模块，支持 PE、PB、ROE 等指标
-- ✨ 新增数据可视化模块，支持 K 线图、指标图
-- ✨ 新增数据导出模块，支持 CSV/Excel/JSON 格式
-- 🐛 修复多处 bug，支持程序完整运行
-- ✨ 新增 `.env` 文件配置 TuShare token（推荐方式）
-- 📝 更新 README 文档，添加配置说明和使用示例
+系统支持自动化的定时任务：
+- 每个交易日9:30自动分析预设股票池
+- 每日自动执行选股策略
+- 支持推送符合条件的股票
 
-### 2026-03-09
-- ✨ 新增价格提醒监控功能
-- ✨ 新增 8 个技术指标计算
-- 📝 完善项目文档和示例
+## 输出格式
 
-## 🔧 配置说明
+支持多种数据输出格式：
+- CSV格式：便于Excel分析
+- Excel格式：带图表的报表
+- JSON格式：便于程序处理
 
-### TuShare Token 和股票池配置（推荐方式）
+## 注意事项
 
-**方式 1：`.env` 文件（推荐）**
+1. **API限制**：TuShare有调用频次限制，大批量扫描时请注意
+2. **数据质量**：历史数据可能存在缺失，系统会自动处理
+3. **网络连接**：确保网络连接稳定，避免数据获取失败
+4. **推送频率**：避免过于频繁的推送，以免被限制
 
-在项目根目录创建 `.env` 文件，写入你的 token 和股票池配置：
+## 更新日志
 
-```bash
-# .env
-TUSHARE_TOKEN=your_tushare_token_here
-STOCK_POOL=000001.SZ,600519.SH,000858.SZ,601318.SH
-```
+### v2.0 - 选股增强版
+- 扩展数据量至一年（约250个交易日）
+- 新增换手率、资金流向等关键指标
+- 实现多维度选股策略
+- 集成推送通知功能
 
-程序会自动读取该文件，无需手动配置。
-
-**STOCK_POOL 配置说明：**
-- 使用逗号分隔多个股票代码
-- 支持沪深两市股票代码（如：000001.SZ、600519.SH）
-- 如果未配置 STOCK_POOL，将使用默认的股票池
-- 仅在守护模式（--daemon）下生效
-
-**方式 2：环境变量**
-
-运行前设置环境变量：
-```bash
-export TUSHARE_TOKEN=your_token
-```
-
-**方式 3：代码中配置**
-
-直接在代码中设置：
-```python
-import tushare as ts
-ts.set_token('your_token')
-```
-
-> 💡 提示：获取 TuShare token 请访问 https://tushare.pro
-
-### 输出目录
-
-- `charts/` - 可视化图表保存目录
-- `exports/` - 数据导出文件目录
-
-## 📝 使用场景
-
-1. **每日复盘**: 获取持仓股票的技术指标和基本面数据
-2. **选股分析**: 对比多只股票的估值和成长能力
-3. **数据研究**: 导出历史数据进行量化分析
-4. **价格监控**: 设置提醒，及时捕捉买卖点
-
-## ⚠️ 免责声明
-
-本工具仅供学习和研究使用，不构成投资建议。股市有风险，投资需谨慎。
-
-## 📄 License
-
-MIT License
-
-## 🤝 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
----
-
-*每日更新，持续改进*
+### v1.0 - 基础版
+- 基础技术指标计算
+- TuShare数据接入
+- 基本面分析
+- 数据导出功能

@@ -38,13 +38,18 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'watchlist' %}active{% endif %}" href="{{ url_for('watchlist') }}">
+                            <a class="nav-link {% if request.endpoint == 'stocks.watchlist' %}active{% endif %}" href="{{ url_for('stocks.watchlist') }}">
                                 <i class="bi bi-star"></i> 自选股
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'analysis' %}active{% endif %}" href="{{ url_for('analysis') }}">
                                 <i class="bi bi-bar-chart"></i> 分析
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'selection.selection_page' %}active{% endif %}" href="{{ url_for('selection.selection_page') }}">
+                                <i class="bi bi-filter"></i> 选股
                             </a>
                         </li>
                         <li class="nav-item">

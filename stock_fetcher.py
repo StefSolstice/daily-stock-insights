@@ -76,28 +76,44 @@ class StockFetcher:
         Returns:
             行情数据 DataFrame
         """
-        # 默认获取最近30天数据
+        # 默认获取最近一年数据（约250个交易日），满足领导要求
         if not end_date:
             end_date = datetime.now().strftime("%Y%m%d")
         if not start_date:
-            start_date = (datetime.now() - timedelta(days=30)).strftime("%Y%m%d")
+            start_date = (datetime.now() - timedelta(days=365)).strftime("%Y%m%d")  # 扩展到一年
         
         try:
-            fields = "ts_code,trade_date,open,high,low,close,pre_close,change,pct_change,vol,amount"
-            df = self.pro.daily(ts_code=symbol, start_date=start_date, end_date=end_date, fields=fields)
+            # 首先获取基本的日线数据
+            basic_fields = "ts_code,trade_date,open,high,low,close,pre_close,change,pct_change,vol,amount"
+            df_basic = self.pro.daily(ts_code=symbol, start_date=start_date, end_date=end_date, fields=basic_fields)
+            
+            # 然后获取每日基本面数据（包含换手率、市盈率等）
+            df_basic_info = self.pro.daily_basic(ts_code=symbol, start_date=start_date, end_date=end_date)
+            
+            # 合并两个数据框，会产生_x,_y后缀
+            df = pd.merge(df_basic, df_basic_info, on=['ts_code', 'trade_date'], how='inner')
+            
+            # 由于两个表都有close列，合并后变成close_x(来自daily)和close_y(来自daily_basic)
+            # 我们使用daily的close，所以将close_x重命名为close
+            if 'close_x' in df.columns:
+                df.rename(columns={'close_x': 'close'}, inplace=True)
+                # 删除重复的close_y列
+                if 'close_y' in df.columns:
+                    df.drop(columns=['close_y'], inplace=True)
             
             # 将数值列转换为数字类型
-            numeric_cols = ['open', 'high', 'low', 'close', 'pre_close', 'change', 'pct_change', 'vol', 'amount']
+            numeric_cols = ['open', 'high', 'low', 'close', 'pre_close', 'change', 'pct_change', 'vol', 'amount', 
+                           'turnover_rate', 'volume_ratio', 'pe', 'pe_ttm', 'pb', 'ps', 'ps_ttm', 'dv_ratio']
             for col in numeric_cols:
                 if col in df.columns:
                     df[col] = pd.to_numeric(df[col], errors='coerce')
             
             # 确保成交量为整数（成交量单位为手，应为整数）
             if 'vol' in df.columns:
-                df['vol'] = df['vol'].round(2)  # 保留2位小数，如果API确实返回小数
+                df['vol'] = df['vol'].round().astype(int)  # 四舍五入取整
             
-            # 按日期降序排列（最新日期在前）
-            df = df.sort_values('trade_date', ascending=False).reset_index(drop=True)
+            # 按日期升序排列（技术指标计算需要时间序列顺序）
+            df = df.sort_values('trade_date', ascending=True).reset_index(drop=True)
             
             return df
         except Exception as e:

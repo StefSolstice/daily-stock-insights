@@ -5,23 +5,36 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-star"></i> 自选股</h2>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStockModal">
-        <i class="bi bi-plus-lg"></i> 添加股票
-    </button>
+    <div class="btn-group">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStockModal">
+            <i class="bi bi-plus-lg"></i> 添加股票
+        </button>
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+            <i class="bi bi-folder-plus"></i> 新建分类
+        </button>
+    </div>
 </div>
 
 <!-- 分类筛选 -->
 <div class="card mb-4">
     <div class="card-body">
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="{{ url_for('watchlist') }}" class="btn btn-sm {% if not current_category_id %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+            <a href="{{ url_for('stocks.watchlist') }}" class="btn btn-sm {% if not current_category_id %}btn-primary{% else %}btn-outline-primary{% endif %}">
                 全部
             </a>
             {% for category in categories %}
-            <a href="{{ url_for('watchlist', category_id=category.id) }}" 
-               class="btn btn-sm {% if current_category_id == category.id %}btn-primary{% else %}btn-outline-primary{% endif %}">
-                {{ category.name }}
-            </a>
+            <div class="btn-group">
+                <a href="{{ url_for('stocks.watchlist', category_id=category.id) }}" 
+                   class="btn btn-sm {% if current_category_id == category.id %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    {{ category.name }}
+                </a>
+                <button class="btn btn-sm btn-outline-secondary" onclick="editCategory({{ category.id }}, '{{ category.name }}')">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory({{ category.id }})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
             {% endfor %}
         </div>
     </div>
@@ -59,10 +72,13 @@
                     <td class="text-muted small">{{ stock.created_at }}</td>
                     <td>
                         <button class="btn btn-sm btn-outline-primary" onclick="analyzeStock('{{ stock.ts_code }}')">
-                            <i class="bi bi-bar-chart"></i> 分析
+                            <i class="bi bi-bar-chart"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="editStock({{ stock.id }}, '{{ stock.ts_code }}', '{{ stock.stock_name or '' }}', {{ stock.category_id or 'null' }})">
+                            <i class="bi bi-pencil"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-danger" onclick="deleteStock({{ stock.id }})">
-                            <i class="bi bi-trash"></i> 删除
+                            <i class="bi bi-trash"></i>
                         </button>
                     </td>
                 </tr>
@@ -101,6 +117,91 @@
                         {% endfor %}
                     </select>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="addStockBtn">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新建分类模态框 -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">新建分类</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="categoryNameInput" class="form-label">分类名称</label>
+                    <input type="text" class="form-control" id="categoryNameInput" placeholder="输入分类名称">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="addCategoryBtn">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑分类模态框 -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑分类</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editCategoryId">
+                <div class="mb-3">
+                    <label for="editCategoryName" class="form-label">分类名称</label>
+                    <input type="text" class="form-control" id="editCategoryName" placeholder="输入分类名称">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="saveCategoryBtn">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑股票模态框 -->
+<div class="modal fade" id="editStockModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑股票</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editStockId">
+                <div class="mb-3">
+                    <label class="form-label">股票代码</label>
+                    <input type="text" class="form-control" id="editStockCode" readonly>
+                </div>
+                <div class="mb-3">
+                    <label for="editStockName" class="form-label">自定义名称</label>
+                    <input type="text" class="form-control" id="editStockName" placeholder="可选">
+                </div>
+                <div class="mb-3">
+                    <label for="editStockCategory" class="form-label">分类</label>
+                    <select class="form-select" id="editStockCategory">
+                        <option value="">未分类</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" id="saveStockBtn">保存</button>
             </div>
         </div>
     </div>
@@ -167,6 +268,93 @@ async function addStock() {
     }
 }
 
+async function addCategory() {
+    const name = document.getElementById('categoryNameInput').value.trim();
+    if (!name) {
+        alert('请输入分类名称');
+        return;
+    }
+    
+    const response = await fetch('/api/category/add', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: name})
+    });
+    
+    if (response.ok) {
+        location.reload();
+    } else {
+        const data = await response.json();
+        alert(data.error || '创建失败');
+    }
+}
+
+function editCategory(id, name) {
+    document.getElementById('editCategoryId').value = id;
+    document.getElementById('editCategoryName').value = name;
+    new bootstrap.Modal(document.getElementById('editCategoryModal')).show();
+}
+
+async function saveCategory() {
+    const id = document.getElementById('editCategoryId').value;
+    const name = document.getElementById('editCategoryName').value.trim();
+    if (!name) {
+        alert('请输入分类名称');
+        return;
+    }
+    
+    const response = await fetch(`/api/category/update/${id}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: name})
+    });
+    
+    if (response.ok) {
+        location.reload();
+    } else {
+        const data = await response.json();
+        alert(data.error || '保存失败');
+    }
+}
+
+async function deleteCategory(id) {
+    if (!confirm('确定要删除这个分类吗？该分类下的股票将变为未分类状态。')) return;
+    
+    const response = await fetch(`/api/category/delete/${id}`, {method: 'POST'});
+    if (response.ok) {
+        location.reload();
+    } else {
+        alert('删除失败');
+    }
+}
+
+function editStock(id, tsCode, stockName, categoryId) {
+    document.getElementById('editStockId').value = id;
+    document.getElementById('editStockCode').value = tsCode;
+    document.getElementById('editStockName').value = stockName;
+    document.getElementById('editStockCategory').value = categoryId || '';
+    new bootstrap.Modal(document.getElementById('editStockModal')).show();
+}
+
+async function saveStock() {
+    const id = document.getElementById('editStockId').value;
+    const tsCode = document.getElementById('editStockCode').value;
+    const stockName = document.getElementById('editStockName').value.trim();
+    const categoryId = document.getElementById('editStockCategory').value || null;
+    
+    const response = await fetch(`/api/stock/update/${id}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({stock_name: stockName, category_id: categoryId})
+    });
+    
+    if (response.ok) {
+        location.reload();
+    } else {
+        alert('保存失败');
+    }
+}
+
 async function deleteStock(id) {
     if (!confirm('确定要删除这只股票吗？')) return;
     
@@ -182,7 +370,9 @@ function analyzeStock(tsCode) {
     window.location.href = `/analysis?ts_code=${tsCode}`;
 }
 
-// 添加股票按钮
-document.querySelector('#addStockModal .btn-primary').onclick = addStock;
+document.getElementById('addStockBtn').onclick = addStock;
+document.getElementById('addCategoryBtn').onclick = addCategory;
+document.getElementById('saveCategoryBtn').onclick = saveCategory;
+document.getElementById('saveStockBtn').onclick = saveStock;
 </script>
 {% endblock %}
