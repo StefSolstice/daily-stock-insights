@@ -14,12 +14,72 @@
     </div>
 </div>
 
-<div id="loading" class="text-center py-5">
+<div id="emptyState" class="text-center py-5">
+    <i class="bi bi-search" style="font-size: 4rem; color: #ccc;"></i>
+    <p class="mt-3 text-muted">输入股票代码，点击分析按钮开始分析</p>
+</div>
+
+<div id="loading" class="text-center py-5" style="display: none;">
     <div class="spinner-border text-primary"></div>
     <p class="mt-3 text-muted">正在分析，请稍候...</p>
 </div>
 
 <div id="analysisResult" style="display: none;">
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">综合评分</h6>
+                    <div id="scoreCircle" class="mt-3" style="position: relative; width: 120px; height: 120px; margin: 0 auto;">
+                        <svg viewBox="0 0 120 120" style="transform: rotate(-90deg);">
+                            <circle cx="60" cy="60" r="50" fill="none" stroke="#eee" stroke-width="10"/>
+                            <circle id="scoreArc" cx="60" cy="60" r="50" fill="none" stroke="#28a745" stroke-width="10" 
+                                    stroke-dasharray="314" stroke-dashoffset="314" stroke-linecap="round"/>
+                        </svg>
+                        <div id="scoreText" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2rem; font-weight: bold;">-</div>
+                    </div>
+                    <div class="mt-3">
+                        <span id="scoreLevel" class="badge bg-secondary">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card h-100">
+                <div class="card-header"><i class="bi bi-lightning"></i> 买卖信号</div>
+                <div class="card-body" id="signalsList">
+                    <span class="text-muted">暂无信号</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header"><i class="bi bi-exclamation-triangle"></i> 异动提醒</div>
+                <div class="card-body" id="activitiesList">
+                    <span class="text-muted">暂无异动</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header"><i class="bi bi-geo-alt"></i> 关键价位</div>
+                <div class="card-body">
+                    <table class="table table-sm mb-0">
+                        <tr><td class="text-muted">当前价</td><td id="priceCurrent" class="fw-bold">-</td></tr>
+                        <tr><td class="text-muted">压力位1</td><td id="priceResist1">-</td></tr>
+                        <tr><td class="text-muted">压力位2</td><td id="priceResist2">-</td></tr>
+                        <tr><td class="text-muted">支撑位1</td><td id="priceSupport1">-</td></tr>
+                        <tr><td class="text-muted">支撑位2</td><td id="priceSupport2">-</td></tr>
+                        <tr><td class="text-muted">止损位</td><td id="priceStopLoss" class="text-danger">-</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card mb-4">
         <div class="card-header">
             <i class="bi bi-info-circle"></i> 基本信息
@@ -119,6 +179,7 @@ async function loadAnalysis() {
         return;
     }
     
+    document.getElementById('emptyState').style.display = 'none';
     document.getElementById('loading').style.display = 'block';
     document.getElementById('analysisResult').style.display = 'none';
     
@@ -133,6 +194,7 @@ async function loadAnalysis() {
         }
         
         currentData = data;
+        saveLastStock(tsCode);
         renderAnalysis(data);
     } catch (e) {
         alert('分析失败：' + e.message);
@@ -153,6 +215,11 @@ function renderAnalysis(data) {
     changeElem.textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '%';
     changeElem.className = change >= 0 ? 'text-success' : 'text-danger';
     
+    renderScore(data.score, data.score_details);
+    renderSignals(data.signals || []);
+    renderActivities(data.activities || []);
+    renderPriceLevels(data.price_levels || {});
+    
     if (data.technical) {
         const t = data.technical;
         document.getElementById('maIndicators').innerHTML = 
@@ -167,12 +234,84 @@ function renderAnalysis(data) {
     }
     
     if (data.chart_data && data.chart_data.length > 0) {
-        renderKlineChart(data.chart_data);
+        renderKlineChart(data.chart_data, data.price_levels);
         renderIndicatorChart(data.chart_data);
     }
 }
 
-function renderKlineChart(chartData) {
+function renderScore(score, details) {
+    const scoreText = document.getElementById('scoreText');
+    const scoreArc = document.getElementById('scoreArc');
+    const scoreLevel = document.getElementById('scoreLevel');
+    
+    scoreText.textContent = score || 0;
+    
+    const circumference = 314;
+    const offset = circumference - (score / 100) * circumference;
+    scoreArc.setAttribute('stroke-dashoffset', offset);
+    
+    if (score >= 70) {
+        scoreArc.setAttribute('stroke', '#28a745');
+        scoreLevel.textContent = '强势';
+        scoreLevel.className = 'badge bg-success';
+    } else if (score >= 50) {
+        scoreArc.setAttribute('stroke', '#ffc107');
+        scoreLevel.textContent = '中性';
+        scoreLevel.className = 'badge bg-warning';
+    } else if (score >= 30) {
+        scoreArc.setAttribute('stroke', '#fd7e14');
+        scoreLevel.textContent = '偏弱';
+        scoreLevel.className = 'badge bg-warning text-dark';
+    } else {
+        scoreArc.setAttribute('stroke', '#dc3545');
+        scoreLevel.textContent = '弱势';
+        scoreLevel.className = 'badge bg-danger';
+    }
+}
+
+function renderSignals(signals) {
+    const container = document.getElementById('signalsList');
+    if (!signals || signals.length === 0) {
+        container.innerHTML = '<span class="text-muted">暂无信号</span>';
+        return;
+    }
+    
+    let html = '<div class="d-flex flex-wrap gap-2">';
+    signals.forEach(s => {
+        const colorClass = s.action === 'buy' ? 'success' : (s.action === 'sell' ? 'danger' : 'secondary');
+        const icon = s.action === 'buy' ? '▲' : (s.action === 'sell' ? '▼' : '◆');
+        html += `<span class="badge bg-${colorClass}" title="${s.desc}">${icon} ${s.name}</span>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function renderActivities(activities) {
+    const container = document.getElementById('activitiesList');
+    if (!activities || activities.length === 0) {
+        container.innerHTML = '<span class="text-muted">暂无异动</span>';
+        return;
+    }
+    
+    let html = '<ul class="list-unstyled mb-0">';
+    activities.forEach(a => {
+        const colorClass = a.level === 'strong' ? 'text-danger' : (a.level === 'medium' ? 'text-warning' : 'text-muted');
+        html += `<li class="${colorClass}">${a.icon || '•'} ${a.desc}</li>`;
+    });
+    html += '</ul>';
+    container.innerHTML = html;
+}
+
+function renderPriceLevels(levels) {
+    document.getElementById('priceCurrent').textContent = levels.current ? levels.current.toFixed(2) : '-';
+    document.getElementById('priceResist1').textContent = levels.resistance_1 || '-';
+    document.getElementById('priceResist2').textContent = levels.resistance_2 || '-';
+    document.getElementById('priceSupport1').textContent = levels.support_1 || '-';
+    document.getElementById('priceSupport2').textContent = levels.support_2 || '-';
+    document.getElementById('priceStopLoss').textContent = levels.stop_loss || '-';
+}
+
+function renderKlineChart(chartData, priceLevels) {
     const dates = chartData.map(d => d.date);
     const opens = chartData.map(d => d.open);
     const highs = chartData.map(d => d.high);
@@ -191,14 +330,53 @@ function renderKlineChart(chartData) {
         yaxis: 'y',
     };
     
+    const traces = [traceCandlestick];
+    
+    if (priceLevels) {
+        if (priceLevels.resistance_1) {
+            traces.push({
+                type: 'scatter',
+                mode: 'lines',
+                name: '压力位1',
+                x: dates,
+                y: Array(dates.length).fill(priceLevels.resistance_1),
+                line: { color: 'red', dash: 'dot', width: 1 },
+                yaxis: 'y',
+            });
+        }
+        if (priceLevels.support_1) {
+            traces.push({
+                type: 'scatter',
+                mode: 'lines',
+                name: '支撑位1',
+                x: dates,
+                y: Array(dates.length).fill(priceLevels.support_1),
+                line: { color: 'green', dash: 'dot', width: 1 },
+                yaxis: 'y',
+            });
+        }
+        if (priceLevels.stop_loss) {
+            traces.push({
+                type: 'scatter',
+                mode: 'lines',
+                name: '止损位',
+                x: dates,
+                y: Array(dates.length).fill(priceLevels.stop_loss),
+                line: { color: 'orange', dash: 'dash', width: 2 },
+                yaxis: 'y',
+            });
+        }
+    }
+    
     const traceVol = {
         type: 'bar',
         x: dates,
         y: vols,
         name: '成交量',
         yaxis: 'y2',
-        marker: { color: closes.map(c => c >= opens[0] ? 'rgba(255,0,0,0.5)' : 'rgba(0,255,0,0.5)') }
+        marker: { color: closes.map((c, i) => c >= opens[i] ? 'rgba(255,0,0,0.5)' : 'rgba(0,255,0,0.5)') }
     };
+    traces.push(traceVol);
     
     const layout = {
         grid: { rows: 2, columns: 1, subplots: [['xy'], ['x,y2']], roworder: 'top to bottom' },
@@ -210,7 +388,7 @@ function renderKlineChart(chartData) {
         legend: { orientation: 'h', y: 1.1, x: 0.5, xanchor: 'center' }
     };
     
-    Plotly.newPlot('klineChart', [traceCandlestick, traceVol], layout, { responsive: true });
+    Plotly.newPlot('klineChart', traces, layout, { responsive: true });
 }
 
 function renderIndicatorChart(chartData) {
@@ -302,6 +480,38 @@ function exportData() {
     link.click();
 }
 
-loadAnalysis();
+function saveLastStock(tsCode) {
+    fetch('/api/settings/last-analysis', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ts_code: tsCode})
+    });
+}
+
+async function getLastStock() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tsCodeFromUrl = urlParams.get('ts_code');
+    if (tsCodeFromUrl) {
+        return tsCodeFromUrl;
+    }
+    
+    try {
+        const resp = await fetch('/api/settings/last-analysis');
+        const data = await resp.json();
+        return data.ts_code;
+    } catch {
+        return null;
+    }
+}
+
+async function init() {
+    const lastStock = await getLastStock();
+    if (lastStock) {
+        document.getElementById('tsCodeInput').value = lastStock;
+        loadAnalysis();
+    }
+}
+
+init();
 </script>
 {% endblock %}

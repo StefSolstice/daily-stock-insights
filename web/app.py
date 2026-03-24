@@ -114,6 +114,17 @@ def init_db():
         )
     """)
 
+    # 用户设置表（存储最后分析的股票等）
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_settings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL UNIQUE,
+            last_analysis_ts_code TEXT,
+            last_analysis_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    """)
+
     conn.commit()
     conn.close()
 

@@ -7,9 +7,8 @@
     <h2><i class="bi bi-speedometer2"></i> 仪表盘</h2>
 </div>
 
-<!-- 统计卡片 -->
 <div class="row mb-4">
-    <div class="col-md-4">
+    <div class="col-md-6">
         <div class="card">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
@@ -22,7 +21,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-6">
         <div class="card">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
@@ -35,58 +34,16 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-1">最后更新</h6>
-                        <h5 class="mb-0">刚刚</h5>
-                    </div>
-                    <i class="bi bi-clock-history text-success" style="font-size: 2rem;"></i>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
-<!-- 分类列表 -->
 <div class="card">
     <div class="card-header">
-        <i class="bi bi-folder"></i> 自选分类
+        <i class="bi bi-star"></i> 我的自选股
     </div>
-    <div class="card-body">
-        {% if categories %}
-        <div class="row">
-            {% for category in categories %}
-            <div class="col-md-4 mb-3">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-folder text-info"></i> {{ category.name }}
-                            </h5>
-                            <span class="badge bg-primary">{{ category.stock_count }} 只</span>
-                        </div>
-                        <div class="mt-3">
-                            <a href="{{ url_for('stocks.watchlist', category_id=category.id) }}" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-eye"></i> 查看
-                            </a>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory({{ category.id }})">
-                                <i class="bi bi-trash"></i> 删除
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="text-center text-muted py-5">
-            <i class="bi bi-folder-x" style="font-size: 3rem;"></i>
-            <p class="mt-3">暂无分类，点击上方按钮创建第一个分类</p>
-        </div>
-        {% endif %}
+    <div class="card-body text-center">
+        <a href="{{ url_for('stocks.watchlist') }}" class="btn btn-primary">
+            <i class="bi bi-list"></i> 查看全部自选股
+        </a>
     </div>
 </div>
 {% endblock %}

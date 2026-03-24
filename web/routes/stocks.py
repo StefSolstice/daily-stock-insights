@@ -239,3 +239,37 @@ def search_stock():
         return jsonify(result_list)
     except Exception as e:
         return jsonify([])
+
+
+@stocks_bp.route("/api/settings/last-analysis")
+@login_required
+def get_last_analysis():
+    conn = get_db()
+    row = conn.execute(
+        "SELECT last_analysis_ts_code FROM user_settings WHERE user_id = ?",
+        (current_user.id,),
+    ).fetchone()
+    conn.close()
+    return jsonify({"ts_code": row["last_analysis_ts_code"] if row else None})
+
+
+@stocks_bp.route("/api/settings/last-analysis", methods=["POST"])
+@login_required
+def save_last_analysis():
+    data = request.get_json()
+    ts_code = data.get("ts_code")
+
+    conn = get_db()
+    conn.execute(
+        """
+        INSERT INTO user_settings (user_id, last_analysis_ts_code, last_analysis_at)
+        VALUES (?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(user_id) DO UPDATE SET
+            last_analysis_ts_code = excluded.last_analysis_ts_code,
+            last_analysis_at = CURRENT_TIMESTAMP
+    """,
+        (current_user.id, ts_code),
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True})
