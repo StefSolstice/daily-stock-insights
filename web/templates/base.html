@@ -7,30 +7,415 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; }
-        .sidebar { min-height: 100vh; background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%); }
-        .sidebar .nav-link { color: rgba(255,255,255,0.8); margin-bottom: 5px; }
-        .sidebar .nav-link:hover, .sidebar .nav-link.active { color: white; background: rgba(255,255,255,0.1); border-radius: 5px; }
-        .sidebar .nav-link i { margin-right: 10px; }
-        .card { border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
-        .card-header { background: white; border-bottom: 1px solid #eee; font-weight: 600; }
-        .stock-up { color: #e74c3c; }
-        .stock-down { color: #27ae60; }
-        .loading { text-align: center; padding: 40px; }
-        .spinner-border { width: 3rem; height: 3rem; }
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border-color: #30363d;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --accent-blue: #58a6ff;
+            --accent-green: #238636;
+            --accent-green-hover: #2ea043;
+            --stock-up: #e74c3c;
+            --stock-down: #27ae60;
+        }
+        
+        * { box-sizing: border-box; }
+        
+        body { 
+            background-color: var(--bg-primary); 
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+        }
+        
+        /* 侧边栏 */
+        .sidebar { 
+            min-height: 100vh; 
+            background: linear-gradient(180deg, #010409 0%, #0d1117 100%);
+            border-right: 1px solid var(--border-color);
+        }
+        
+        .sidebar .brand {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+        }
+        
+        .sidebar .brand h4 {
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .sidebar .brand i {
+            color: var(--accent-blue);
+            margin-right: 8px;
+        }
+        
+        .sidebar .nav-link { 
+            color: var(--text-secondary); 
+            margin: 4px 8px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        
+        .sidebar .nav-link:hover { 
+            color: var(--text-primary); 
+            background: rgba(88, 166, 255, 0.1);
+        }
+        
+        .sidebar .nav-link.active { 
+            color: var(--text-primary); 
+            background: rgba(88, 166, 255, 0.15);
+            border-left: 3px solid var(--accent-blue);
+        }
+        
+        .sidebar .nav-link i { 
+            margin-right: 10px;
+            width: 18px;
+            text-align: center;
+        }
+        
+        .sidebar .nav-section {
+            padding: 0 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .sidebar .nav-section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            padding: 8px 12px 4px;
+            letter-spacing: 0.5px;
+        }
+        
+        .sidebar hr {
+            border-color: var(--border-color);
+            margin: 1rem 0;
+        }
+        
+        .sidebar .user-info {
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            margin: 0 8px;
+        }
+        
+        .sidebar .user-info small {
+            color: var(--text-secondary);
+        }
+        
+        .sidebar .user-info i {
+            color: var(--accent-blue);
+            margin-right: 6px;
+        }
+        
+        /* 卡片 */
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: none;
+        }
+        
+        .card-header {
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-weight: 600;
+            padding: 12px 16px;
+        }
+        
+        .card-body {
+            color: var(--text-primary);
+            padding: 16px;
+        }
+        
+        /* 按钮 */
+        .btn-primary {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--accent-green-hover);
+            border-color: var(--accent-green-hover);
+            color: white;
+        }
+        
+        .btn-outline-primary {
+            color: var(--accent-blue);
+            border-color: var(--accent-blue);
+        }
+        
+        .btn-outline-primary:hover {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: var(--bg-primary);
+        }
+        
+        .btn-outline-secondary {
+            color: var(--text-secondary);
+            border-color: var(--border-color);
+        }
+        
+        .btn-outline-secondary:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--text-secondary);
+            color: var(--text-primary);
+        }
+        
+        .btn-outline-danger {
+            color: var(--stock-up);
+            border-color: var(--stock-up);
+        }
+        
+        .btn-outline-danger:hover {
+            background: var(--stock-up);
+            border-color: var(--stock-up);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--border-color);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        /* 表单 */
+        .form-control, .form-select {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        .form-control:focus, .form-select:focus {
+            background: var(--bg-primary);
+            border-color: var(--accent-blue);
+            color: var(--text-primary);
+            box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+        }
+        
+        .form-control:disabled, .form-select:disabled {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+        
+        .form-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 4px;
+        }
+        
+        /* 表格 */
+        .table {
+            color: var(--text-primary);
+        }
+        
+        .table > thead {
+            background: var(--bg-tertiary);
+        }
+        
+        .table > tbody > tr {
+            border-color: var(--border-color);
+        }
+        
+        .table > tbody > tr:hover {
+            background: rgba(88, 166, 255, 0.05);
+        }
+        
+        .table td, .table th {
+            border-color: var(--border-color);
+            vertical-align: middle;
+        }
+        
+        /* 徽章 */
+        .badge.bg-primary { background: var(--accent-blue) !important; }
+        .badge.bg-success { background: var(--accent-green) !important; }
+        .badge.bg-info { background: var(--accent-blue) !important; }
+        .badge.bg-warning { background: #f0b429 !important; color: #000 !important; }
+        .badge.bg-danger { background: var(--stock-up) !important; }
+        .badge.bg-secondary { background: var(--bg-tertiary) !important; color: var(--text-primary) !important; }
+        
+        /* 警告框 */
+        .alert-info {
+            background: rgba(88, 166, 255, 0.1);
+            border-color: rgba(88, 166, 255, 0.3);
+            color: var(--accent-blue);
+        }
+        
+        .alert-success {
+            background: rgba(35, 134, 54, 0.15);
+            border-color: rgba(35, 134, 54, 0.3);
+            color: #3fb950;
+        }
+        
+        .alert-warning {
+            background: rgba(240, 180, 41, 0.15);
+            border-color: rgba(240, 180, 41, 0.3);
+            color: #f0b429;
+        }
+        
+        .alert-danger {
+            background: rgba(231, 76, 60, 0.15);
+            border-color: rgba(231, 76, 60, 0.3);
+            color: var(--stock-up);
+        }
+        
+        /* 模态框 */
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        .modal-header {
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .modal-footer {
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .modal-title {
+            color: var(--text-primary);
+        }
+        
+        .btn-close {
+            filter: invert(1);
+            opacity: 0.5;
+        }
+        
+        .btn-close:hover {
+            opacity: 1;
+        }
+        
+        /* 列表组 */
+        .list-group-item {
+            background: var(--bg-tertiary);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+        
+        .list-group-item:hover {
+            background: rgba(88, 166, 255, 0.1);
+        }
+        
+        /* 工具提示 */
+        .tooltip-inner {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+        }
+        
+        /* 股票颜色 */
+        .stock-up { color: var(--stock-up) !important; }
+        .stock-down { color: var(--stock-down) !important; }
+        .text-success { color: var(--stock-down) !important; }
+        .text-danger { color: var(--stock-up) !important; }
+        .text-warning { color: #f0b429 !important; }
+        .text-muted { color: var(--text-secondary) !important; }
+        
+        /* 加载动画 */
+        .spinner-border { color: var(--accent-blue); }
+        
+        /* 页面标题 */
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--text-primary);
+        }
+        
+        .text-muted {
+            color: var(--text-secondary) !important;
+        }
+        
+        /* 链接 */
+        a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+        
+        a:hover {
+            color: #79b8ff;
+        }
+        
+        /* 主内容区 */
+        main {
+            background: var(--bg-primary);
+            min-height: 100vh;
+            padding: 24px;
+        }
+        
+        /* 代码 */
+        code {
+            background: var(--bg-tertiary);
+            color: var(--accent-blue);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        
+        /* 滚动条 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+        
+        /* 移动端响应式 */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                z-index: 1000;
+                width: 280px;
+                transition: left 0.3s ease;
+            }
+            
+            .sidebar.show {
+                left: 0;
+            }
+            
+            main {
+                width: 100%;
+            }
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     {% if current_user.is_authenticated %}
-    <div class="container-fluid">
-        <div class="row">
+    <div class="container-fluid p-0">
+        <div class="row g-0">
             <!-- 侧边栏 -->
-            <nav class="col-md-2 d-md-block sidebar p-3">
-                <div class="position-sticky">
-                    <h4 class="text-white mb-4">
-                        <i class="bi bi-graph-up"></i> 股票分析
-                    </h4>
+            <nav class="col-md-2 sidebar p-3" id="sidebar">
+                <div class="brand">
+                    <h4><i class="bi bi-graph-up"></i>股票分析</h4>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">主菜单</div>
                     <ul class="nav flex-column">
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
@@ -44,32 +429,49 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'analysis' %}active{% endif %}" href="{{ url_for('analysis') }}">
-                                <i class="bi bi-bar-chart"></i> 分析
+                                <i class="bi bi-bar-chart"></i> 股票分析
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'selection.selection_page' %}active{% endif %}" href="{{ url_for('selection.selection_page') }}">
-                                <i class="bi bi-filter"></i> 选股
+                                <i class="bi bi-filter"></i> 智能选股
                             </a>
                         </li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">系统</div>
+                    <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('settings') }}">
+                            <a class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}" href="{{ url_for('settings') }}">
                                 <i class="bi bi-gear"></i> 设置
                             </a>
                         </li>
                     </ul>
-                    <hr class="text-white-50">
-                    <div class="text-white-50 small">
-                        <i class="bi bi-person-circle"></i> {{ current_user.username }}
-                    </div>
-                    <a class="btn btn-outline-light btn-sm mt-2 w-100" href="{{ url_for('logout') }}">
-                        <i class="bi bi-box-arrow-right"></i> 退出
-                    </a>
                 </div>
+                
+                <hr>
+                
+                <div class="user-info">
+                    <small><i class="bi bi-person-circle"></i>{{ current_user.username }}</small>
+                </div>
+                
+                <a class="btn btn-outline-secondary btn-sm mt-3 w-100" href="{{ url_for('logout') }}">
+                    <i class="bi bi-box-arrow-right"></i> 退出登录
+                </a>
+                
+                <!-- 移动端折叠按钮 -->
+                <button class="btn btn-outline-secondary btn-sm mt-2 w-100 d-md-none" onclick="toggleSidebar()">
+                    <i class="bi bi-x"></i> 关闭
+                </button>
             </nav>
             
+            <!-- 移动端遮罩 -->
+            <div class="sidebar-overlay d-md-none" onclick="toggleSidebar()"></div>
+            
             <!-- 主内容区 -->
-            <main class="col-md-10 ms-sm-auto px-md-4 py-4">
+            <main class="col-md-10">
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, message in messages %}
@@ -103,5 +505,11 @@
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     {% block extra_js %}{% endblock %}
+    
+    <script>
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('show');
+    }
+    </script>
 </body>
 </html>

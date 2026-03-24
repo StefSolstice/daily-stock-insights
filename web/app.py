@@ -291,7 +291,7 @@ def dashboard():
 @login_required
 def analysis():
     """股票分析页面"""
-    ts_code = request.args.get("ts_code", "000001.SZ")
+    ts_code = request.args.get("ts_code", "")
     return render_template("analysis.html", ts_code=ts_code)
 
 

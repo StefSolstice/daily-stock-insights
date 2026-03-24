@@ -7,29 +7,33 @@
     <h2><i class="bi bi-speedometer2"></i> 仪表盘</h2>
 </div>
 
-<div class="row mb-4">
+<div class="row g-4 mb-4">
     <div class="col-md-6">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="text-muted mb-1">自选股总数</h6>
-                        <h3 class="mb-0">{{ total_stocks }}</h3>
+                        <div class="text-muted mb-1" style="font-size: 0.875rem;">自选股总数</div>
+                        <h2 class="mb-0" style="font-size: 2.5rem; font-weight: 700;">{{ total_stocks }}</h2>
                     </div>
-                    <i class="bi bi-star-fill text-warning" style="font-size: 2rem;"></i>
+                    <div class="stat-icon">
+                        <i class="bi bi-star-fill" style="font-size: 3rem; color: var(--accent-blue); opacity: 0.8;"></i>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card">
+        <div class="card h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="text-muted mb-1">分类数量</h6>
-                        <h3 class="mb-0">{{ categories|length }}</h3>
+                        <div class="text-muted mb-1" style="font-size: 0.875rem;">分类数量</div>
+                        <h2 class="mb-0" style="font-size: 2.5rem; font-weight: 700;">{{ categories|length }}</h2>
                     </div>
-                    <i class="bi bi-folder-fill text-info" style="font-size: 2rem;"></i>
+                    <div class="stat-icon">
+                        <i class="bi bi-folder-fill" style="font-size: 3rem; color: #3fb950; opacity: 0.8;"></i>
+                    </div>
                 </div>
             </div>
         </div>
@@ -38,12 +42,58 @@
 
 <div class="card">
     <div class="card-header">
-        <i class="bi bi-star"></i> 我的自选股
+        <i class="bi bi-star"></i> 快速访问
     </div>
-    <div class="card-body text-center">
-        <a href="{{ url_for('stocks.watchlist') }}" class="btn btn-primary">
-            <i class="bi bi-list"></i> 查看全部自选股
-        </a>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <a href="{{ url_for('stocks.watchlist') }}" class="quick-action-btn">
+                    <div class="card h-100" style="cursor: pointer; transition: all 0.2s;">
+                        <div class="card-body text-center">
+                            <i class="bi bi-list" style="font-size: 2rem; color: var(--accent-blue);"></i>
+                            <div class="mt-2">查看全部自选股</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{{ url_for('analysis') }}" class="quick-action-btn">
+                    <div class="card h-100" style="cursor: pointer; transition: all 0.2s;">
+                        <div class="card-body text-center">
+                            <i class="bi bi-bar-chart" style="font-size: 2rem; color: #3fb950;"></i>
+                            <div class="mt-2">股票分析</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{{ url_for('selection.selection_page') }}" class="quick-action-btn">
+                    <div class="card h-100" style="cursor: pointer; transition: all 0.2s;">
+                        <div class="card-body text-center">
+                            <i class="bi bi-filter" style="font-size: 2rem; color: #f0b429;"></i>
+                            <div class="mt-2">智能选股</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
     </div>
 </div>
+
+<style>
+.quick-action-btn {
+    text-decoration: none;
+    color: inherit;
+}
+.quick-action-btn .card:hover {
+    border-color: var(--accent-blue);
+    transform: translateY(-2px);
+}
+.quick-action-btn .card-body {
+    padding: 1.5rem;
+}
+.stat-icon {
+    padding: 1rem;
+}
+</style>
 {% endblock %}

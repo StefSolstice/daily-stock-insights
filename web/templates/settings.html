@@ -5,9 +5,9 @@
 {% block content %}
 <h2 class="mb-4"><i class="bi bi-gear"></i> 设置</h2>
 
-<div class="row">
+<div class="row g-4">
     <div class="col-md-6">
-        <div class="card mb-4">
+        <div class="card h-100">
             <div class="card-header">
                 <i class="bi bi-person"></i> 账户信息
             </div>
@@ -16,7 +16,7 @@
                     <label class="form-label">用户名</label>
                     <input type="text" class="form-control" value="{{ current_user.username }}" disabled>
                 </div>
-                <button class="btn btn-primary">
+                <button class="btn btn-outline-primary" disabled>
                     <i class="bi bi-pencil"></i> 修改密码
                 </button>
             </div>
@@ -24,7 +24,7 @@
     </div>
     
     <div class="col-md-6">
-        <div class="card mb-4">
+        <div class="card h-100">
             <div class="card-header">
                 <i class="bi bi-key"></i> API 配置
             </div>
@@ -32,7 +32,7 @@
                 <div class="mb-3">
                     <label class="form-label">TuShare Token</label>
                     <input type="password" class="form-control" value="**********************" disabled>
-                    <small class="text-muted">在 .env 文件中配置</small>
+                    <div class="form-text">在 .env 文件中配置</div>
                 </div>
                 <a href="https://tushare.pro" target="_blank" class="btn btn-outline-primary">
                     <i class="bi bi-box-arrow-up-right"></i> 获取 TuShare Token
@@ -42,24 +42,30 @@
     </div>
 </div>
 
-<div class="card">
+<div class="card mt-4">
     <div class="card-header">
         <i class="bi bi-info-circle"></i> 系统信息
     </div>
-    <div class="card-body">
-        <table class="table table-borderless">
-            <tr>
-                <td style="width: 150px;">系统版本</td>
-                <td>1.0.0</td>
-            </tr>
-            <tr>
-                <td>最后更新</td>
-                <td>2026-03-10</td>
-            </tr>
-            <tr>
-                <td>技术栈</td>
-                <td>Flask + SQLite + Bootstrap</td>
-            </tr>
+    <div class="card-body p-0">
+        <table class="table mb-0">
+            <tbody>
+                <tr>
+                    <td style="width: 150px; color: var(--text-secondary);">系统版本</td>
+                    <td>1.0.0</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-secondary);">最后更新</td>
+                    <td>2026-03-24</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-secondary);">技术栈</td>
+                    <td>Flask + SQLite + Bootstrap 5</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-secondary);">数据来源</td>
+                    <td>TuShare Pro API</td>
+                </tr>
+            </tbody>
         </table>
     </div>
 </div>
